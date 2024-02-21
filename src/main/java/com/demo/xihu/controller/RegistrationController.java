@@ -16,7 +16,7 @@ import org.springframework.web.bind.annotation.*;
 //import javax.validation.constraints.NotNull;
 
 @RestController
-@RequestMapping("/registration")
+@RequestMapping("/dev-api/registration")
 @Slf4j
 @Tag(name = "用户_活动相关接口", description = "报名")
 public class RegistrationController {
@@ -27,6 +27,7 @@ public class RegistrationController {
     @PostMapping
     @Operation(summary = "活动报名")
     public Result registerForActivity(@RequestBody @Validated RegistrationDTO registrationDTO) {
+        log.info("活动信息:{}",registrationDTO);
         //参数非空已检验
         registrationService.register(registrationDTO);
         return Result.success("报名成功");
@@ -35,6 +36,7 @@ public class RegistrationController {
     @DeleteMapping
     @Operation(summary = "取消报名")
     public Result cancelRegistration(@RequestBody @NotNull Long cancelActivityId) {
+        log.info("取消活动id信息:{}",cancelActivityId);
         //registrationService.cancelRegistration(cancelActivityId);
         return Result.success("取消成功");
     }

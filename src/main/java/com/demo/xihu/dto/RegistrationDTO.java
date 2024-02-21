@@ -11,8 +11,6 @@ import lombok.NoArgsConstructor;
 import java.time.LocalDateTime;
 
 @Data
-@NoArgsConstructor
-@AllArgsConstructor
 public class RegistrationDTO {
 
 //    //用户id(用token)

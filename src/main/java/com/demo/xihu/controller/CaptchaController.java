@@ -21,7 +21,7 @@ import java.io.IOException;
 import java.util.concurrent.TimeUnit;
 
 @Slf4j
-@RequestMapping("captcha")
+@RequestMapping("/dev-api/captcha")
 @RestController
 public class CaptchaController {
     @Autowired

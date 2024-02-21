@@ -1,0 +1,81 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.demo.xihu.mapper.CommentMapper">
+
+    <!-- 通用查询映射结果 -->
+    <resultMap id="BaseResultMap" type="com.demo.xihu.entity.Comment">
+        <id column="id" property="id" />
+        <result column="content" property="content" />
+        <result column="user_id" property="userId" />
+        <result column="username" property="username" />
+        <result column="create_time" property="createTime" />
+        <result column="is_delete" property="isDelete" />
+        <result column="activity_id" property="activityId" />
+        <result column="parent_id" property="parentId" />
+        <result column="root_parent_id" property="rootParentId" />
+    </resultMap>
+
+
+
+        <!-- 最新评论查询映射结果 -->
+    <resultMap id="LatestResultMap" type="com.demo.xihu.vo.CommentBlogVo">
+        <result column="activity_id" property="activityId" />
+        <result column="content" property="content" />
+        <result column="username" property="username" />
+        <result column="title" property="title" />
+    </resultMap>
+
+    <!-- 通用查询结果列 -->
+    <sql id="Base_Column_List">
+        id, content, user_id, username, create_time, is_delete, activity_id, parent_id, root_parent_id
+    </sql>
+
+    <select id="getCommentList" resultMap="BaseResultMap">
+        SELECT
+            id, content, user_id, username, create_time,is_delete, activity_id, parent_id, root_parent_id
+        FROM
+            comment
+        WHERE
+            activity_id=#{activityId}
+        ORDER BY
+            create_time DESC
+    </select>
+
+    <select id="getCommentListTotal" resultType="Long">
+        SELECT
+            COUNT(*)
+        FROM
+            comment
+        WHERE
+            activity_id=#{activityId}
+    </select>
+
+    <select id="getLatestComments" resultMap="LatestResultMap">
+        SELECT
+            c.activity_id AS activity_id,
+            c.content AS content,
+            c.username AS username,
+            b.title AS title
+        FROM
+            comment c
+        LEFT JOIN activity b ON c.activity_id=b.id
+        ORDER BY
+            c.create_time DESC
+        LIMIT 5
+    </select>
+
+    <insert id="save">
+        INSERT INTO
+            comment (content, user_id, username, create_time, is_delete, activity_id, parent_id, root_parent_id)
+        VALUES
+            (#{content}, #{userId}, #{username}, #{createTime}, #{isDelete}, #{activityId}, #{parentId}, #{rootParentId})
+    </insert>
+
+    <delete id="removeById">
+        DELETE FROM
+            comment
+        WHERE
+            id=#{id}
+    </delete>
+
+</mapper>

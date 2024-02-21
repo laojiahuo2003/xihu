@@ -17,7 +17,7 @@ import java.util.Map;
 
 
 @RestController
-@RequestMapping("/admin")
+@RequestMapping("/dev-api/admin")
 @Slf4j
 @Tag(name = "管理员相关接口", description = "这是描述")
 public class AdminController {
@@ -80,6 +80,7 @@ public class AdminController {
     @PostMapping
     @Operation(summary = "新增用户")
     public Result<String> save(@RequestBody User user){
+        log.info("新增用户信息:{}",user);
         //查询用户
         User u = userService.findByAccount(user.getAccount());
         if(u!=null){return Result.error("账号已被占用",2);}

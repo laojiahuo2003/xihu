@@ -16,9 +16,9 @@ public class WebConfig implements WebMvcConfigurer {
 
     @Override
     public void addInterceptors(InterceptorRegistry registry) {
-        //添加登录拦截器，设置登录和注册接口不拦截,以及swagger接口
-        registry.addInterceptor(loginInterceptor).excludePathPatterns("/user/login","/user/register","/swagger-ui/**", "/v3/api-docs/**","/activities/list/**","/captcha/**","/sms/**");
+        //添加登录拦截器
+         registry.addInterceptor(loginInterceptor).excludePathPatterns("/dev-api/user/login","/dev-api/user/register","/swagger-ui/**", "/v3/api-docs/**","/dev-api/activities/list/**","/dev-api/captcha/**","/dev-api/sms/**","/dev-api/comment/**");
         // 添加管理员权限拦截器，拦截所有admin开头的路径
-        registry.addInterceptor(adminAccessInterceptor).addPathPatterns("/admin/**");
+        registry.addInterceptor(adminAccessInterceptor).addPathPatterns("/dev-api/admin/**");
     }
 }

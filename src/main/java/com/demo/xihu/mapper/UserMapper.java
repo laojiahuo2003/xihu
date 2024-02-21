@@ -27,4 +27,7 @@ public interface UserMapper extends BaseMapper<User> {
 
     @Update("update user set password=#{md5String} where id=#{id}")
     void updatePwd(String md5String, Integer id);
+
+    @Select("select * from user where id=#{userId}")
+    User getUserById(Long userId);
 }
