@@ -10,11 +10,13 @@ import com.demo.xihu.entity.Activity;
 import com.demo.xihu.entity.Registration;
 import com.demo.xihu.entity.User;
 import com.demo.xihu.exception.BaseException;
+import com.demo.xihu.exception.UserNotLoginException;
 import com.demo.xihu.mapper.ActivityMapper;
 import com.demo.xihu.mapper.RegistrationMapper;
 import com.demo.xihu.mapper.UserMapper;
 import com.demo.xihu.service.ActivityService;
 import com.demo.xihu.service.RegistrationService;
+import com.demo.xihu.utils.JwtUtil;
 import com.demo.xihu.utils.ThreadLocalUtil;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -34,13 +36,40 @@ public class RegistrationServiceImpl extends ServiceImpl<RegistrationMapper, Reg
     private ActivityMapper activityMapper;
     @Autowired
     private UserMapper userMapper;
-    @Override
-    public void register(RegistrationDTO registrationDTO) {
+
+    public void cancelRegistration(String token,Long cancelActivityId) {
+        //检验活动是否存在
+        if(cancelActivityId==null||activityMapper.selectById(cancelActivityId)==null) throw new BaseException("活动id无效");
+        //解析当前登录id
+        try {
+            Map<String, Object> claims = JwtUtil.parseToken(token);
+        }catch (Exception e) {
+            throw new UserNotLoginException("token失效,请重新登录");
+        }
+        Map<String, Object> claims = JwtUtil.parseToken(token);
+        Integer userId = (Integer) claims.get("id");
+        //检验是否重复取消
+        QueryWrapper<Registration> queryWrapper = new QueryWrapper<>();
+        queryWrapper.eq("user_id", userId).eq("activity_id", cancelActivityId);
+        List<Registration> registrations = registrationMapper.selectList(queryWrapper);
+        if (registrations == null || registrations.isEmpty()) {
+            throw new BaseException("不存在报名信息");
+        }
+        //操作数据库，删除报名信息
+        QueryWrapper<Registration> registrationQueryWrapper = new QueryWrapper<Registration>().eq("user_id", userId).eq("activity_id", cancelActivityId);
+        registrationMapper.delete(registrationQueryWrapper);
+    }
+    public void register(String token,RegistrationDTO registrationDTO) {
         //检验活动是否存在
         Long activityId = registrationDTO.getActivityId();
         if(activityMapper.selectById(activityId)==null) throw new BaseException("活动id无效");
-        //取出当前登录id
-        Map<String,Object> claims = ThreadLocalUtil.get();
+        //解析当前登录id
+        try {
+            Map<String, Object> claims = JwtUtil.parseToken(token);
+        }catch (Exception e) {
+            throw new UserNotLoginException("token失效,请重新登录");
+        }
+        Map<String, Object> claims = JwtUtil.parseToken(token);
         Integer userId = (Integer) claims.get("id");
         //检验是否重复报名
         QueryWrapper<Registration> queryWrapper = new QueryWrapper<>();
@@ -61,4 +90,5 @@ public class RegistrationServiceImpl extends ServiceImpl<RegistrationMapper, Reg
     public List<Integer> findSubbyUserId(Integer userId) {
         return registrationMapper.selectSubbyUserId(userId);
     }
+
 }

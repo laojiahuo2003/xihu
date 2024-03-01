@@ -22,6 +22,8 @@ public class CaptchaConfig {
     public DefaultKaptcha captcha() {
         DefaultKaptcha captcha = new DefaultKaptcha();
         Properties properties = new Properties();
+        //去除边框
+        properties.setProperty(Constants.KAPTCHA_BORDER,"no");
         //验证码个数
         properties.setProperty(Constants.KAPTCHA_TEXTPRODUCER_CHAR_LENGTH, "4");
         //字体间隔

@@ -1,13 +1,16 @@
 package com.demo.xihu.controller;
 
 
+import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.demo.xihu.dto.LoginbyAccountDTO;
 import com.demo.xihu.entity.User;
+import com.demo.xihu.exception.UserNotLoginException;
 import com.demo.xihu.result.Result;
 import com.demo.xihu.service.UserService;
 import com.demo.xihu.utils.JwtUtil;
 import com.demo.xihu.utils.Md5Util;
 import com.demo.xihu.utils.ThreadLocalUtil;
+import com.demo.xihu.vo.InfoUserVO;
 import com.demo.xihu.vo.loginUserVO;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -17,6 +20,8 @@ import org.hibernate.validator.constraints.URL;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
+
+import java.sql.SQLIntegrityConstraintViolationException;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -30,6 +35,57 @@ public class UserController {
     private UserService userService;
     @Autowired
     private CaptchaController captchaController;
+
+
+    /**
+     * 注销接口
+     * @param request
+     * @return
+     */
+    @PostMapping("/logout")
+    public Result logout(HttpServletRequest request){
+        String token = request.getHeader("Authorization");
+        //userService.logout(token);
+        return Result.success("注销成功");
+    }
+
+//    /**
+//     * 请求头传入token，实现查询登陆的用户个人信息
+//     *
+//     * @return
+//     */
+//    @GetMapping("/userInfo")
+//    @Operation(summary = "查询登陆的用户个人信息(废弃，还没删)")
+//    public Result<User> userInfo(/*@RequestHeader(name="Authorization")String token*/) {
+//        //获取该线程的值
+//        Map<String, Object> claims = ThreadLocalUtil.get();
+//        String account = (String) claims.get("account");
+//        User user = userService.findByAccount(account);
+//        return Result.success("查询成功",user);
+//    }
+
+    /**
+     * 判断token情况
+     * @param request
+     * @return
+     */
+    @GetMapping("/Info")
+    @Operation(summary = "判断token情况")
+    public Result tokenReader(HttpServletRequest request){
+        String token = request.getHeader("Authorization");
+        log.info("tokenReader：{}",token);
+        try {
+            Map<String, Object> claims = JwtUtil.parseToken(token);
+            Integer id = (Integer) claims.get("id");
+            log.info("解析出来的id：{}",id);
+            User user = userService.getById(id);
+            InfoUserVO infoUserVO = new InfoUserVO();
+            BeanUtils.copyProperties(user,infoUserVO);
+            return Result.success("token有效",infoUserVO);
+        }catch (Exception e) {
+            return Result.error("token无效");
+        }
+    }
 
     @PatchMapping("/updatePwd")
     @Operation(summary = "更新用户密码")
@@ -81,56 +137,23 @@ public class UserController {
     }
 
     /**
-     * 请求头传入token，实现查询登陆的用户个人信息
-     *
+     *修改个人信息
+     * @param userDTO
      * @return
      */
-    @GetMapping("/userInfo")
-    @Operation(summary = "查询登陆的用户个人信息")
-    public Result<User> userInfo(/*@RequestHeader(name="Authorization")String token*/) {
-        //获取该线程的值
+    @PostMapping("/updateInfo")
+    @Operation(summary = "修改个人信息")
+    public Result userUpdate(@RequestBody User userDTO){
+        log.info("修改个人信息传入DTO",userDTO);
         Map<String, Object> claims = ThreadLocalUtil.get();
-        String account = (String) claims.get("account");
-        User user = userService.findByAccount(account);
-        return Result.success("查询成功",user);
+        Integer id = (Integer) claims.get("id");
+        userDTO.setId((long)id);
+        if(userService.exists(new QueryWrapper<User>().ne("id",userDTO.getId()).eq("username",userDTO.getUsername()))) return Result.error("用户名已存在");
+        if(userService.updateById(userDTO)) {
+            return Result.success("修改成功");
+        }
+        return Result.error("修改失败");
     }
-
-//    /**
-//     * 注册接口
-//     *
-//     * @param account
-//     * @param password
-//     * @return
-//     */
-//    @PostMapping("/register")
-//    @Operation(summary = "注册")
-//    public Result register(String account, String phone, String username, String password) {
-//
-//        if (account == null || account.length() < 2 || account.length() > 16 ||
-//                phone == null || phone.length() != 11 ||
-//                username == null || username.length() > 16 ||
-//                password == null || password.length() < 2 || password.length() > 16)
-//            return Result.error("参数不合法", 1);
-//
-//        QueryWrapper<User> queryWrapperAccount = new QueryWrapper<>();
-//        queryWrapperAccount.eq("account", account);
-//        if (userService.exists(queryWrapperAccount)) {
-//            return Result.error("账号已被占用");
-//        }
-//        QueryWrapper<User> queryWrapperPhone = new QueryWrapper<>();
-//        queryWrapperPhone.eq("phone", phone);
-//        if (userService.exists(queryWrapperPhone)) {
-//            return Result.error("手机号已被占用");
-//        }
-//        QueryWrapper<User> queryWrapperUsername = new QueryWrapper<>();
-//        queryWrapperUsername.eq("username", username);
-//        if (userService.exists(queryWrapperUsername)) {
-//            return Result.error("用户名已被占用");
-//        }
-//        userService.register(account, password, phone, username);
-//        return Result.success("注册成功");
-//
-//    }
 
     /**
      * 账号登录接口
@@ -155,10 +178,10 @@ public class UserController {
         if (account == null) {
             return Result.error("账号不能为空", 1);
         }
-        String pattern = "^[a-zA-Z0-9]{5,10}$";
-        if (!account.matches(pattern)) {
-            return Result.error("账号不符合要求：必须为5-10位，且只能包含英文字母和数字", 1);
-        }
+//        String pattern = "^[a-zA-Z0-9]{5,10}$";
+//        if (!account.matches(pattern)) {
+//            return Result.error("账号不符合要求：必须为5-10位，且只能包含英文字母和数字", 1);
+//        }
         // 参数合法性校验
         if (password == null) {
             return Result.error("密码不能为空", 1);
@@ -169,7 +192,7 @@ public class UserController {
 //        }
         //判断是否存在该用户
         User loginUser = userService.findByAccount(account);
-        if (loginUser == null) return Result.error("用户不存在");
+        if (loginUser == null) return Result.error("账号不存在");
         //判断密码是否正确
         if (Md5Util.getMD5String(password).equals(loginUser.getPassword())) {
             Map<String, Object> claims = new HashMap<>();
@@ -184,50 +207,10 @@ public class UserController {
         }
         return Result.error("密码错误");
     }
-    //    /**
-//     * 根据id查询信息
-//     * @param id
-//     * @return
-//     */
-//    @GetMapping("/{id}")
-//    @ApiOperation("根据id查询信息")
-//    public Result<User> getById(@PathVariable Long id){
-//        User user=userService.getById(id);
-//        log.info("查询用户:{}",user);
-//        if(user==null) return Result.error("查询失败");
-//        else return Result.success(user);
-//    }
-//
-//    /**
-//     * 根据用户名更新用户信息
-//     * @param userDTO
-//     * @return
-//     */
-//    @PutMapping("/updateByUsername")
-//    @ApiOperation("根据用户名更新用户信息")
-//    public Result updateByUsername(@RequestBody User userDTO){
-//        log.info("更新用户信息:{}",userDTO);
-//        User user = userService.findByUsername(userDTO.getUsername());
-//        if(user==null) return Result.error("该用户名不存在",1);
-//        userService.updateByUsername(userDTO);
-//        return Result.success();
-//    }
-//
-//    /**
-//     * 新增用户
-//     * @param user
-//     * @return
-//     */
-//    @PostMapping
-//    @ApiOperation("新增用户")
-//    public Result<String> save(@RequestBody User user){
-//        //查询用户
-//        User u = userService.findByUsername(user.getUsername());
-//        if(u!=null){return Result.error("用户名已被占用",2);}
-//        log.info("新增用户:{}",user);
-//        user.setPassword(Md5Util.getMD5String(user.getPassword()));
-//        userService.save(user);
-//        return Result.success();
-//    }
+
+
+
+
+
 
 }

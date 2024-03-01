@@ -17,10 +17,15 @@ mybatis-plus:
       id-type: assign_id
 server:
   port: 8080
+  servlet:
+    #配置访问路径前缀
+    context-path: /
 # 配置swagger文档的访问路径
 springdoc:
   swagger-ui:
     path: /swagger-ui.html
+
+
 sky:
   jwt:
     # 设置jwt签名加密时使用的秘钥

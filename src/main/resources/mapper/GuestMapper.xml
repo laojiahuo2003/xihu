@@ -1,0 +1,71 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.demo.xihu.mapper.GuestMapper">
+
+
+    <resultMap id="GuestActivityResultMap" type="com.demo.xihu.vo.GuestShowVO">
+        <result column="guestname" property="guestname"/>
+        <result column="description" property="description"/>
+        <result column="video_url" property="videoUrl"/>
+        <result column="avatar" property="avatar"/>
+        <result column="start_time" property="startTime"/>
+        <result column="end_time" property="endTime"/>
+        <result column="title" property="title"/>
+    </resultMap>
+<!--    <select id="selectGuestsAndActivities" resultMap="GuestActivityResultMap">-->
+<!--            SELECT-->
+<!--            g.guestname,-->
+<!--            g.description,-->
+<!--            g.video_url,-->
+<!--            g.avatar,-->
+<!--            a.start_time,-->
+<!--            a.end_time,-->
+<!--            a.title-->
+<!--            FROM-->
+<!--            guest g-->
+<!--            INNER JOIN activity a ON g.activity_id = a.id-->
+<!--            <where>-->
+<!--                <if test="dateTime != null">-->
+<!--                    AND DATE(a.start_time) = #{dateTime}-->
+<!--                </if>-->
+<!--                <if test="isExpert != null">-->
+<!--                    AND g.is_expert=#{isExpert}-->
+<!--                </if>-->
+<!--                <if test="guestname != null">-->
+<!--                    AND g.guestname like CONCAT('%',CONCAT(#{guestname},'%'))-->
+<!--                </if>-->
+<!--            </where>-->
+<!--        <if test="num != null">-->
+<!--            LIMIT #{num}-->
+<!--        </if>-->
+<!--    </select>-->
+    <select id="selectGuestsAndActivities" resultMap="GuestActivityResultMap">
+        SELECT
+        g.guestname,
+        g.description,
+        g.video_url,
+        g.avatar,
+        a.start_time,
+        a.end_time,
+        a.title
+        FROM
+        guest g
+        LEFT JOIN activity a ON g.activity_id = a.id
+        <where>
+            <if test="dateTime != null">
+                AND DATE(a.start_time) = #{dateTime}
+            </if>
+            <if test="isExpert != null">
+                AND g.is_expert=#{isExpert}
+            </if>
+            <if test="guestname != null">
+                AND g.guestname like CONCAT('%', #{guestname}, '%')
+            </if>
+        </where>
+        <if test="num != null">
+            LIMIT #{num}
+        </if>
+    </select>
+
+</mapper>

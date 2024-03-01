@@ -32,7 +32,7 @@ public class LoginInterceptor implements HandlerInterceptor {
             //放行
             return true;
         }catch (Exception e) {
-            response.setStatus(401);
+            response.setStatus(200);
             throw new UserNotLoginException("用户未登录");
             //return false;
         }

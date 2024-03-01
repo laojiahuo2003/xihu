@@ -2,6 +2,7 @@ package com.demo.xihu.service.impl;
 
 
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
+import com.demo.xihu.dto.RegisterDTO;
 import com.demo.xihu.exception.AccountNotFoundException;
 import com.demo.xihu.mapper.UserMapper;
 import com.demo.xihu.entity.User;
@@ -10,6 +11,7 @@ import com.demo.xihu.exception.PasswordErrorException;
 import com.demo.xihu.service.UserService;
 import com.demo.xihu.utils.Md5Util;
 import com.demo.xihu.utils.ThreadLocalUtil;
+import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -54,11 +56,15 @@ public class UserServiceImpl extends ServiceImpl<UserMapper,User> implements Use
     }
 
     @Override
-    public void register(String account, String password,String phone,String username) {
+    public void register(RegisterDTO registerDTO) {
         //md5加密
-        String md5Password = Md5Util.getMD5String(password);
+        String md5Password = Md5Util.getMD5String(registerDTO.getPassword());
+        registerDTO.setPassword(md5Password);
+        User user = new User();
+        BeanUtils.copyProperties(registerDTO,user);
+        userMapper.insert(user);
         //添加
-        userMapper.myInsert(account,md5Password,phone,username);
+        //userMapper.myInsert(account,md5Password,phone,username);
     }
 
     @Override

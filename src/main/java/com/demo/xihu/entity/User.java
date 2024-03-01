@@ -50,7 +50,7 @@ public class User implements Serializable {
 
     // 性别 0 男 1 女
     @TableField("sex")
-    private Integer sex;
+    private String sex;
 
     // 头像
     @TableField("avatar")
@@ -60,9 +60,9 @@ public class User implements Serializable {
     @TableField("company")
     private String company;
 
-    // 部门
-    @TableField("department")
-    private String department;
+//    // 部门
+//    @TableField("department")
+//    private String department;
 
     // 职位
     @TableField("position")
@@ -74,4 +74,7 @@ public class User implements Serializable {
     @Email
     private String email;
 
+    //生日
+    @TableField("birth")
+    private String birth;
 }

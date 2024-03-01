@@ -2,18 +2,24 @@ package com.demo.xihu.controller;
 
 
 import com.demo.xihu.dto.RegistrationDTO;
+import com.demo.xihu.exception.UserNotLoginException;
 import com.demo.xihu.result.Result;
+import com.demo.xihu.service.ActivityService;
 import com.demo.xihu.service.RegistrationService;
 import com.demo.xihu.service.UserService;
+import com.demo.xihu.utils.JwtUtil;
+import com.demo.xihu.utils.ThreadLocalUtil;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.constraints.NotNull;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
-//import javax.validation.constraints.NotNull;
+import java.util.Map;
+
 
 @RestController
 @RequestMapping("/dev-api/registration")
@@ -22,24 +28,31 @@ import org.springframework.web.bind.annotation.*;
 public class RegistrationController {
     @Autowired
     private RegistrationService registrationService;
+    @Autowired
+    private ActivityService activityService;
 
-    // TODO：这里报名需要修改活动表的订阅总数
-    @PostMapping
+    @PostMapping()
     @Operation(summary = "活动报名")
-    public Result registerForActivity(@RequestBody @Validated RegistrationDTO registrationDTO) {
+    public Result registerForActivity(@RequestBody  RegistrationDTO registrationDTO, HttpServletRequest request) {
         log.info("活动信息:{}",registrationDTO);
-        //参数非空已检验
-        registrationService.register(registrationDTO);
+        String token = request.getHeader("Authorization");
+        if(token==null) return Result.error("用户未登录");
+        registrationService.register(token,registrationDTO);
+        activityService.changeSubCount(registrationDTO.getActivityId(),1);
         return Result.success("报名成功");
     }
 
-    @DeleteMapping
+    @DeleteMapping("/{cancelActivityId}")
     @Operation(summary = "取消报名")
-    public Result cancelRegistration(@RequestBody @NotNull Long cancelActivityId) {
-        log.info("取消活动id信息:{}",cancelActivityId);
-        //registrationService.cancelRegistration(cancelActivityId);
+    public Result cancelRegistration(@PathVariable @NotNull Long cancelActivityId,HttpServletRequest request) {
+        log.info("取消活动id信息:{}", cancelActivityId);
+        String token = request.getHeader("Authorization");
+        if(token==null) return Result.error("用户未登录");
+        registrationService.cancelRegistration(token,cancelActivityId);
+        activityService.changeSubCount(cancelActivityId,-1);
         return Result.success("取消成功");
     }
+
 
 
 

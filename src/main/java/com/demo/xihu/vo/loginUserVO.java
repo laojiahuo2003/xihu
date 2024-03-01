@@ -18,7 +18,7 @@ public class loginUserVO implements Serializable {
     private String account;
 
 
-    private String password;
+//    private String password;
 
 
     private String username;
@@ -30,22 +30,19 @@ public class loginUserVO implements Serializable {
     private String phone;
 
 
-    private Integer sex;
+    private String sex;
 
 
     private String avatar;
 
 
     private String company;
-
-
-    private String department;
-
-
+    //private String department;
     private String position;
 
-
     private String email;
+
+    private String birth;
 
     private String token;
 }

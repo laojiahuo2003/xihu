@@ -21,7 +21,7 @@ import java.util.Date;
 @TableName("activity")
 public class Activity implements Serializable {
 
-    private static final long serialVersionUID = 1L;
+    private static final long serialVersionUID = 3L;
 
     //主键id
     @TableId(value = "id",type = IdType.AUTO)
@@ -31,6 +31,14 @@ public class Activity implements Serializable {
     @TableField("title")
     @NotEmpty
     private String title;
+
+    //活动类型
+    @TableField("activity_type")
+    private String activityType;
+
+    //活动图片
+    @TableField("image_url")
+    private String imageUrl;
 
     //开始时间
     @TableField("start_time")

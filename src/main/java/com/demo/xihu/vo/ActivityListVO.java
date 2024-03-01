@@ -23,31 +23,26 @@ public class ActivityListVO implements Serializable {
     //名称
     @NotEmpty
     private String title;
-
     //开始时间
-    private LocalDateTime startTime;
-
+    private String startTime;
     //结束时间
-    private LocalDateTime endTime;
-
+    private String endTime;
+    //活动类型
+    private String activityType;
+    //图片
+    private String imageUrl;
     //地点
     private String location;
-
     //描述
     private String description;
-
     //直播链接
     private String liveUrl;
-
     //回放链接
     private String replayUrl;
-
     //订阅总数
     private int subscriptionCount = 0;
-
     //热度
     private int popularity = 0;
-
     //当前用户是否订阅
     private int isSub = 0;
 }

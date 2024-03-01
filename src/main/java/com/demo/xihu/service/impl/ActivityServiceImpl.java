@@ -1,22 +1,25 @@
 package com.demo.xihu.service.impl;
 
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
+import com.baomidou.mybatisplus.core.conditions.update.UpdateWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
+import com.demo.xihu.dto.QueryActivitiesDTO;
 import com.demo.xihu.entity.Activity;
-import com.demo.xihu.entity.User;
 import com.demo.xihu.mapper.ActivityMapper;
-import com.demo.xihu.mapper.UserMapper;
+import com.demo.xihu.result.Result;
 import com.demo.xihu.service.ActivityService;
-import com.demo.xihu.service.UserService;
 import com.demo.xihu.vo.ActivityListVO;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
+import java.util.Map;
 
 @Service
 public class ActivityServiceImpl extends ServiceImpl<ActivityMapper, Activity> implements ActivityService {
@@ -24,6 +27,12 @@ public class ActivityServiceImpl extends ServiceImpl<ActivityMapper, Activity> i
     private ActivityMapper activityMapper;
 
 
+
+    /**
+     * 根据标题模糊搜索
+     * @param title
+     * @return
+     */
     public List<Activity> searchByTitle(String title) {
         QueryWrapper<Activity> queryWrapper = new QueryWrapper<>();
         queryWrapper.like("title", title);
@@ -76,6 +85,35 @@ public class ActivityServiceImpl extends ServiceImpl<ActivityMapper, Activity> i
             activityListVO.add(activityListVOItem);
         }
         return activityListVO;
+    }
+
+
+    /**
+     * 根据参数查询活动
+     * @param queryActivitiesDTO
+     * @return
+     */
+    public List<ActivityListVO> listByParams(QueryActivitiesDTO queryActivitiesDTO) {
+        String date = queryActivitiesDTO.getDate();//"5月7日"
+        String type = queryActivitiesDTO.getType();//"平行论坛"
+        Integer num = queryActivitiesDTO.getNum();//"2"
+        if (date==null||date.isEmpty()){
+            return activityMapper.selectByParams(null,type,num);
+        }else{
+            // 将输入的日期字符串转换为完整的日期字符串
+            String fullDateStr = "2024" + "年" + date;
+            // 定义日期格式
+            DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy年M月d日");
+            // 解析日期
+            LocalDate dateTime = LocalDate.parse(fullDateStr, formatter);
+            return activityMapper.selectByParams(dateTime,type,num);
+        }
+
+    }
+
+    @Override
+    public void changeSubCount(Long activityId, int num) {
+        activityMapper.changeSubCount(activityId,num);
     }
 
 }

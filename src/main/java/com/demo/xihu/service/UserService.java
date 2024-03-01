@@ -2,6 +2,7 @@ package com.demo.xihu.service;
 
 
 import com.baomidou.mybatisplus.extension.service.IService;
+import com.demo.xihu.dto.RegisterDTO;
 import com.demo.xihu.entity.User;
 import org.springframework.stereotype.Service;
 
@@ -24,10 +25,9 @@ public interface UserService extends IService<User> {
 
     /**
      * 注册
-     * @param account
-     * @param password
+     * @param registerDTO
      */
-    void register(String account, String password,String phone,String username);
+    void register(RegisterDTO registerDTO);
 
 
     /**
@@ -50,4 +50,5 @@ public interface UserService extends IService<User> {
     void updateAvatar(String avatarUrl);
 
     void updatePwd(String newPwd);
+
 }

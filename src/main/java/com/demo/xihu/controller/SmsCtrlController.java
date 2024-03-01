@@ -11,10 +11,7 @@ import com.demo.xihu.entity.User;
 import com.demo.xihu.result.Result;
 import com.demo.xihu.service.RedisService;
 import com.demo.xihu.service.UserService;
-import com.demo.xihu.utils.CodeUtil;
-import com.demo.xihu.utils.JwtUtil;
-import com.demo.xihu.utils.Md5Util;
-import com.demo.xihu.utils.SmsTool;
+import com.demo.xihu.utils.*;
 import com.demo.xihu.vo.loginUserVO;
 import io.swagger.v3.oas.annotations.Operation;
 import jakarta.servlet.http.HttpServletRequest;
@@ -23,7 +20,9 @@ import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
+import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -82,7 +81,7 @@ public class SmsCtrlController {
     public Result validateNum(@RequestBody LoginByPhoneDTO loginByPhoneDTO, HttpServletRequest request) throws ClientException {
         log.info("手机登录信息:{}", loginByPhoneDTO);
         String phone = loginByPhoneDTO.getPhone();
-        if (phone == null || phone.length() != 11) return Result.error("手机号不合法");
+        if (phone == null || phone.length() != 11) return Result.error("手机号不存在");
         String verifyCode = loginByPhoneDTO.getVerifyCode();
         String captcha = loginByPhoneDTO.getCaptcha();
 
@@ -126,7 +125,7 @@ public class SmsCtrlController {
      */
     @PostMapping("/register")
     @Operation(summary = "注册")
-    public Result register(@RequestBody RegisterDTO registerDTO, HttpServletRequest request) {
+    public Result register(@RequestBody RegisterDTO registerDTO, HttpServletRequest request){
 
         log.info("注册用户信息{}",registerDTO);
         //获取数据
@@ -135,52 +134,53 @@ public class SmsCtrlController {
         String username = registerDTO.getUsername();
         String password = registerDTO.getPassword();
         String verifyCode = registerDTO.getVerifyCode();
-        String captcha = registerDTO.getCaptcha();
+//        String captcha = registerDTO.getCaptcha();
 
         if (account == null  || phone == null || phone.length() != 11 || username == null || username.length() > 16 || password == null)
             return Result.error("参数不合法", 1);
 
-        String  pattern = "^[a-zA-Z0-9]{5,10}$";
-        if (!account.matches(pattern)) {
-            return Result.error("账号不符合要求：必须为5-10位，且只能包含英文字母和数字", 1);
-        }
-        //暂时不需要
+//        String  pattern = "^[a-zA-Z0-9]{5,10}$";
+//        if (!account.matches(pattern)) {
+//            return Result.error("账号不符合要求：必须为5-10位，且只能包含英文字母和数字", 1);
+//        }
 //        pattern = "^(?=.*[0-9])(?=.*[a-z])(?=.*[A-Z]).{8,15}$";
 //        if (!password.matches(pattern)) {
 //            return Result.error("密码不符合要求：必须为8-15位，且包含数字、大小写字母", 1);
 //        }
 
-        //图形验证码
-        Result result = captchaController.checkCaptcha(captcha, request);
-        if (result.getCode() == 1) {
-            return result;
-        }
-        // 短信验证码
-        /*String redisauthcode = redisService.get(tokenId + phone); // 传入tokenId返回redis中的value
-        if (StringUtils.isEmpty(redisauthcode)) {
-            // 如果未取到则过期验证码已失效
-            return Result.error("短信验证码失效");
-        } else if (!verifyCode.equals(redisauthcode)) {
-            // 验证码错误
-            return Result.error("短信验证码错误");
-        }*/
+//        //图形验证码
+//        Result result = captchaController.checkCaptcha(captcha, request);
+//        if (result.getCode() == 1) {
+//            return result;
+//        }
+//        // 短信验证码
+//        String redisauthcode = redisService.get(tokenId + phone); // 传入tokenId返回redis中的value
+//        if (StringUtils.isEmpty(redisauthcode)) {
+//            // 如果未取到则过期验证码已失效
+//            return Result.error("短信验证码失效");
+//        } else if (!verifyCode.equals(redisauthcode)) {
+//            // 验证码错误
+//            return Result.error("短信验证码错误");
+//        }
 
         QueryWrapper<User> queryWrapperAccount = new QueryWrapper<>();
         queryWrapperAccount.eq("account", account);
         if (userService.exists(queryWrapperAccount)) {
-            return Result.error("账号已被占用");
+            return Result.error("账号已经被占用");
         }
         QueryWrapper<User> queryWrapperPhone = new QueryWrapper<>();
         queryWrapperPhone.eq("phone", phone);
         if (userService.exists(queryWrapperPhone)) {
-            return Result.error("手机号已被占用");
+            return Result.error("手机号已经被注册");
         }
         QueryWrapper<User> queryWrapperUsername = new QueryWrapper<>();
         queryWrapperUsername.eq("username", username);
         if (userService.exists(queryWrapperUsername)) {
-            return Result.error("用户名已被占用");
+            return Result.error("用户名已存在");
         }
-        userService.register(account, password, phone, username);
+        //设置默认头像
+        if(registerDTO.getAvatar()==null)
+        userService.register(registerDTO);
         return Result.success("注册成功");
 
     }

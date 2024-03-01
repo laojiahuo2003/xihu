@@ -2,27 +2,21 @@ package com.demo.xihu.controller;
 
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.demo.xihu.dto.DateActivitiesVO;
+import com.demo.xihu.dto.QueryActivitiesDTO;
 import com.demo.xihu.entity.Activity;
-import com.demo.xihu.mapper.RegistrationMapper;
 import com.demo.xihu.result.Result;
 import com.demo.xihu.service.ActivityService;
 import com.demo.xihu.service.RegistrationService;
-import com.demo.xihu.utils.ActivitySorter;
 import com.demo.xihu.utils.JwtUtil;
-import com.demo.xihu.utils.ThreadLocalUtil;
 import com.demo.xihu.vo.ActivityListVO;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpServletResponse;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.web.bind.annotation.*;
 
-import java.time.LocalDate;
-import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
@@ -38,6 +32,37 @@ public class ActivityController {
     private RegistrationService registrationService;
     @Autowired
     private ActivityService activityService;
+
+
+    @PostMapping("/activities/list")
+    @Operation(summary = "根据条件查询活动")
+    public Result queryActivities(@RequestBody QueryActivitiesDTO queryActivitiesDTO, HttpServletRequest request) {
+        Integer num = queryActivitiesDTO.getNum();
+        if(num==null||num<=-1){
+            queryActivitiesDTO.setNum(null);
+        }
+        System.out.println(queryActivitiesDTO);
+        //根据条件选择
+        List<ActivityListVO> activityListVO = activityService.listByParams(queryActivitiesDTO);
+        String token = request.getHeader("Authorization");
+        //尝试从token获取id
+        try {
+            Map<String, Object> claims = JwtUtil.parseToken(token);
+            Integer userId = (Integer) claims.get("id");
+            List<Integer> activityIds = registrationService.findSubbyUserId(userId);
+            for (ActivityListVO vo : activityListVO) {
+                Long voId = vo.getId(); // 获取当前 ActivityListVO 对象的 ID
+                // 将 activityIds 中的 Integer 转换为 Long，并进行比较
+                if (activityIds.stream().map(Integer::longValue).collect(Collectors.toList()).contains(voId)) {
+                    vo.setIsSub(1);  // 假设 setIsSub 是用来设置 isSub 属性的方法
+                }
+            }
+        }catch (Exception e){
+
+        }
+
+        return Result.success("查找成功",activityListVO);
+    }
 
     /**
      * 模糊查询活动名
@@ -101,38 +126,6 @@ public class ActivityController {
         Page<Activity> page = activityService.getActivitiesByPage(pageNo, pageSize);
         return Result.success("查询成功",page);
     }
-
-    /**
-     * 查询所有活动，并根据登录用户返回是否订阅
-     * @param request
-     * @return
-     */
-    @GetMapping("/activities/list")
-    @Operation(summary = "查询所有活动")
-    public Result queryActivities(HttpServletRequest request){
-        List<ActivityListVO> activityListVO = activityService.alllist();
-        String token = request.getHeader("Authorization");
-        try {
-            Map<String, Object> claims = JwtUtil.parseToken(token);
-            Integer userId = (Integer) claims.get("id");
-            List<Integer> activityIds = registrationService.findSubbyUserId(userId);
-            for (ActivityListVO vo : activityListVO) {
-                Long voId = vo.getId(); // 获取当前 ActivityListVO 对象的 ID
-                // 将 activityIds 中的 Integer 转换为 Long，并进行比较
-                if (activityIds.stream().map(Integer::longValue).collect(Collectors.toList()).contains(voId)) {
-                    vo.setIsSub(1);  // 假设 setIsSub 是用来设置 isSub 属性的方法
-                }
-            }
-        }catch (Exception e){
-
-        }
-//        Map<LocalDate, List<ActivityListVO>> sortedActivities = ActivitySorter.sortActivitiesByDate(activityListVO);
-        List<DateActivitiesVO> dateActivitiesVOS = ActivitySorter.sortActivitiesByDate(activityListVO);
-        return Result.success("查询成功",dateActivitiesVOS);
-    }
-
-
-
 
     /**
      * 根据id更新活动信息

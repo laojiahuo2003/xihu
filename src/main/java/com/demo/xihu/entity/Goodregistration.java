@@ -1,6 +1,5 @@
 package com.demo.xihu.entity;
 
-
 import com.baomidou.mybatisplus.annotation.IdType;
 import com.baomidou.mybatisplus.annotation.TableField;
 import com.baomidou.mybatisplus.annotation.TableId;
@@ -11,7 +10,6 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-//import javax.validation.constraints.NotNull;
 import java.io.Serializable;
 import java.time.LocalDateTime;
 
@@ -19,9 +17,9 @@ import java.time.LocalDateTime;
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-@TableName("registration")
-public class Registration implements Serializable {
-    private static final long serialVersionUID = 2L;
+@TableName("goodregistration")
+public class Goodregistration implements Serializable {
+    private static final long serialVersionUID = 75465L;
 
     @TableId(value = "id",type = IdType.AUTO)
     @NotNull
@@ -33,7 +31,7 @@ public class Registration implements Serializable {
     private Long userId;
 
     //活动id
-    @TableField("activity_id")
+    @TableField("goodactivity_id")
     @NotNull
     private Long activityId;
 

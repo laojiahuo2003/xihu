@@ -1,17 +1,13 @@
 package com.demo.xihu.dto;
 
 
-import com.baomidou.mybatisplus.annotation.TableField;
 import jakarta.validation.constraints.NotNull;
-import lombok.AllArgsConstructor;
 import lombok.Data;
-import lombok.NoArgsConstructor;
 
-//import javax.validation.constraints.NotNull;
-import java.time.LocalDateTime;
+
 
 @Data
-public class RegistrationDTO {
+public class GoodregistrationDTO {
 
 //    //用户id(用token)
 //    @NotNull

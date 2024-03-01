@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.demo.xihu.mapper.ActivityMapper">
+    <update id="changeSubCount">
+        UPDATE activity
+        SET subscription_count = subscription_count + #{num}
+        WHERE id = #{activityId}
+    </update>
+
+    <select id="selectByParams" resultType="com.demo.xihu.vo.ActivityListVO">
+        SELECT * FROM activity
+        <where>
+            <if test="date != null">
+                AND DATE(start_time) = #{date}
+            </if>
+            <if test="type != null and type != ''">
+                AND activity_type = #{type}
+            </if>
+        </where>
+        <if test="num != null">
+            LIMIT #{num}
+        </if>
+    </select>
+</mapper>
