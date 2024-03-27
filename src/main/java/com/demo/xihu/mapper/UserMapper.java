@@ -3,6 +3,7 @@ package com.demo.xihu.mapper;
 
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 import com.demo.xihu.entity.User;
+import com.demo.xihu.vo.InfoUserVO;
 import org.apache.ibatis.annotations.Insert;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Select;
@@ -30,4 +31,6 @@ public interface UserMapper extends BaseMapper<User> {
 
     @Select("select * from user where id=#{userId}")
     User getUserById(Long userId);
+
+    InfoUserVO getUserInfo(Integer id);
 }

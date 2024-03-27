@@ -32,4 +32,6 @@ public class InfoUserVO {
     private String email;
 
     private String birth;
+
+    private Integer points;
 }

@@ -4,6 +4,7 @@ import com.aliyuncs.dysmsapi.model.v20170525.SendSmsResponse;
 import com.aliyuncs.exceptions.ClientException;
 import com.aliyuncs.utils.StringUtils;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
+import com.demo.xihu.config.IPConfig;
 import com.demo.xihu.dto.LoginByPhoneDTO;
 import com.demo.xihu.dto.PhoneDTO;
 import com.demo.xihu.dto.RegisterDTO;
@@ -179,7 +180,7 @@ public class SmsCtrlController {
             return Result.error("用户名已存在");
         }
         //设置默认头像
-        if(registerDTO.getAvatar()==null)
+        if(registerDTO.getAvatar()==null||registerDTO.getAvatar().isEmpty()) registerDTO.setAvatar(IPConfig.MY_IP+"/image/1.jpg");
         userService.register(registerDTO);
         return Result.success("注册成功");
 

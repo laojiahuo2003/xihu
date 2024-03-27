@@ -27,6 +27,10 @@ public class User implements Serializable {
     @NotNull
     private Long id;
 
+    //积分
+    @TableField("points")
+    private Integer points;
+
     //账号
     @TableField("account")
     private String account;

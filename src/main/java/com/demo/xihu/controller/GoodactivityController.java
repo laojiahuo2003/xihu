@@ -17,10 +17,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 import java.util.Map;
@@ -36,6 +33,24 @@ public class GoodactivityController {
     private GoodactivityService goodactivityService;
     @Autowired
     private GoodregistrationService goodregistrationService;
+
+
+    @GetMapping("/goodactivities/Info")
+    @Operation(summary = "搜索订阅的活动")
+    public Result getActivityByToken(HttpServletRequest request){
+        String token = request.getHeader("Authorization");
+        log.info("getActivityByToken：{}",token);
+        try {
+            Map<String, Object> claims = JwtUtil.parseToken(token);
+            Integer userid = (Integer) claims.get("id");
+            log.info("解析出来的id：{}",userid);
+            List<Goodactivity> activityList=goodactivityService.listById(userid);
+            return Result.success("token有效",activityList);
+        }catch (Exception e) {
+            return Result.error("token无效");
+        }
+    }
+
 
     @PostMapping("/goodactivities/list")
     @Operation(summary = "根据条件查询活动")

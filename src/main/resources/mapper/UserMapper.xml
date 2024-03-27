@@ -19,6 +19,16 @@
         </set>
         WHERE account = #{account}
     </update>
+    <select id="getUserInfo" resultType="com.demo.xihu.vo.InfoUserVO">
+        SELECT
+            *
+        FROM user
+        <where>
+            <if test="id != null">
+                AND user.id=#{id}
+            </if>
+        </where>
+    </select>
 
 
 </mapper>

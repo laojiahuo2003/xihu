@@ -23,5 +23,6 @@ public class RegisterDTO {
     private String position;
     private String email;
     private String verifyCode;
+    private Integer points;
     private String captcha;
 }

@@ -4,11 +4,14 @@ package com.demo.xihu.service;
 import com.baomidou.mybatisplus.extension.service.IService;
 import com.demo.xihu.dto.RegisterDTO;
 import com.demo.xihu.entity.User;
+import com.demo.xihu.vo.InfoUserVO;
 import org.springframework.stereotype.Service;
 
 
 public interface UserService extends IService<User> {
 
+
+    InfoUserVO getById(Integer id);
     /**
      * 登录
      * @param userLoginDTO
@@ -51,4 +54,5 @@ public interface UserService extends IService<User> {
 
     void updatePwd(String newPwd);
 
+    void addpoint(Integer userId, Integer pointnum);
 }

@@ -18,4 +18,6 @@ public interface ActivityMapper extends BaseMapper<Activity> {
      List<ActivityListVO> selectByParams(LocalDate date, String type, Integer num);
 
      void changeSubCount(Long activityId, int num);
+
+     List<Activity> selectInfoById(Integer userid);
 }

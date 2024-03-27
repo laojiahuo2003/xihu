@@ -116,4 +116,9 @@ public class ActivityServiceImpl extends ServiceImpl<ActivityMapper, Activity> i
         activityMapper.changeSubCount(activityId,num);
     }
 
+    @Override
+    public List<Activity> listById(Integer userid) {
+        return activityMapper.selectInfoById(userid);
+    }
+
 }

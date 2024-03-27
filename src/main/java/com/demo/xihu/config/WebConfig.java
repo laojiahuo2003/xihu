@@ -20,7 +20,9 @@ public class WebConfig implements WebMvcConfigurer {
     public void addInterceptors(InterceptorRegistry registry) {
         //添加登录拦截器
         registry.addInterceptor(loginInterceptor).excludePathPatterns("/dev-api/user/login","/dev-api/user/register","/swagger-ui/**", "/v3/api-docs/**","/dev-api/activities/list/**","/dev-api/captcha/**","/dev-api/sms/**","/dev-api/comment/**","/dev-api/user/token","/dev-api/upload","/image/**")
-                .excludePathPatterns("/dev-api/goodactivities/list/**");
+                .excludePathPatterns("/dev-api/goodactivities/list/**")
+                .excludePathPatterns("/dev-api/guests/**")
+                .excludePathPatterns("/dev-api/poster/**");
         // 添加管理员权限拦截器，拦截所有admin开头的路径
         registry.addInterceptor(adminAccessInterceptor).addPathPatterns("/dev-api/admin/**");
     }

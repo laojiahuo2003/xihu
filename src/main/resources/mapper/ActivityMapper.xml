@@ -22,4 +22,19 @@
             LIMIT #{num}
         </if>
     </select>
+    <select id="selectInfoById" resultType="com.demo.xihu.entity.Activity">
+        SELECT
+            *
+        FROM
+        activity a
+        LEFT JOIN registration r ON r.activity_id = a.id
+        <where>
+            <if test="userid != null">
+                AND r.user_id = #{userid}
+            </if>
+        </where>
+        ORDER BY a.start_time
+    </select>
+
+
 </mapper>

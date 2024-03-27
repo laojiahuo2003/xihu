@@ -21,6 +21,8 @@ public class GuestShowVO {
     //头像
     private String avatar;
 
+    //是否专家
+    private Integer isExpert;
 
 
     //参会议程

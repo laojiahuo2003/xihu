@@ -6,6 +6,7 @@ import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.plugins.pagination.PageDTO;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.demo.xihu.dto.QueryGoodactivitiesDTO;
+import com.demo.xihu.entity.Activity;
 import com.demo.xihu.entity.Goodactivity;
 import com.demo.xihu.mapper.ActivityMapper;
 import com.demo.xihu.mapper.GoodactivityMapper;
@@ -15,6 +16,7 @@ import com.demo.xihu.service.GoodactivityService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import java.util.List;
 import java.util.Objects;
 
 @Service
@@ -38,6 +40,11 @@ public class GoodactivityServiceImpl extends ServiceImpl<GoodactivityMapper, Goo
     @Override
     public void changeSubCount(Long activityId, int num) {
         goodactivityMapper.changeSubCount(activityId,num);
+    }
+
+    @Override
+    public List<Goodactivity> listById(Integer userid) {
+        return goodactivityMapper.selectInfoById(userid);
     }
 
 }

@@ -7,5 +7,16 @@
         SET peo = peo + #{num}
         WHERE id = #{activityId}
     </update>
+    <select id="selectInfoById" resultType="com.demo.xihu.entity.Goodactivity">
+        SELECT *
+        FROM goodactivity g
+        LEFT JOIN goodregistration r ON r.goodactivity_id = g.id
+        <where>
+            <if test="userid != null">
+                AND r.user_id = #{userid}
+            </if>
+        </where>
+        ORDER BY g.time
+    </select>
 
 </mapper>

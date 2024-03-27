@@ -1,7 +1,10 @@
 package com.demo.xihu.controller;
 
 
+import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.demo.xihu.dto.RegistrationDTO;
+import com.demo.xihu.entity.Activity;
+import com.demo.xihu.entity.User;
 import com.demo.xihu.exception.UserNotLoginException;
 import com.demo.xihu.result.Result;
 import com.demo.xihu.service.ActivityService;
@@ -9,15 +12,18 @@ import com.demo.xihu.service.RegistrationService;
 import com.demo.xihu.service.UserService;
 import com.demo.xihu.utils.JwtUtil;
 import com.demo.xihu.utils.ThreadLocalUtil;
+import com.demo.xihu.vo.InfoUserVO;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.constraints.NotNull;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
 import java.util.Map;
 
 

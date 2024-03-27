@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.demo.xihu.mapper.UserpointMapper">
+
+    <select id="PointsStatusList" resultType="com.demo.xihu.vo.PointsStatusVO">
+        SELECT
+            p.name,
+            CASE
+                WHEN u.update_time IS NULL OR u.update_time &lt; #{newDate} OR u.user_id IS NULL THEN 1
+                ELSE 0
+                END AS canClick
+        FROM
+            point p
+                LEFT JOIN userpoint u ON p.id = u.point_id AND u.user_id = #{userId}
+    </select>
+
+
+
+    <resultMap id="PointsRecordResultMap" type="com.demo.xihu.vo.PointsRecordVO">
+        <result column="update_time" property="time"/>
+        <result column="name" property="action"/>
+        <result column="pointnum" property="change"/>
+    </resultMap>
+    <select id="userpointList" resultMap="PointsRecordResultMap">
+        SELECT
+            u.update_time,
+            p.pointnum,
+            p.name
+        FROM userpoint u
+         LEFT JOIN point p on u.point_id = p.id
+        <where>
+            <if test="userId != null">
+                AND u.user_id = #{userId}
+            </if>
+        </where>
+    </select>
+</mapper>
+

@@ -1,14 +1,21 @@
 package com.demo.xihu.service.impl;
 
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
+import com.baomidou.mybatisplus.core.conditions.update.UpdateWrapper;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
+import com.demo.xihu.constant.pointName;
 import com.demo.xihu.dto.GoodregistrationDTO;
 import com.demo.xihu.entity.Goodregistration;
+import com.demo.xihu.entity.Point;
+import com.demo.xihu.entity.Userpoint;
 import com.demo.xihu.exception.BaseException;
 import com.demo.xihu.exception.UserNotLoginException;
 import com.demo.xihu.mapper.GoodactivityMapper;
 import com.demo.xihu.mapper.GoodregistrationMapper;
+import com.demo.xihu.mapper.PointMapper;
+import com.demo.xihu.mapper.UserpointMapper;
 import com.demo.xihu.service.GoodregistrationService;
+import com.demo.xihu.service.UserService;
 import com.demo.xihu.utils.JwtUtil;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -24,6 +31,12 @@ public class GoodregistrationServiceImpl extends ServiceImpl<GoodregistrationMap
     private GoodregistrationMapper goodregistrationMapper;
     @Autowired
     private GoodactivityMapper goodactivityMapper;
+    @Autowired
+    private UserpointMapper userpointMapper;
+    @Autowired
+    private PointMapper pointMapper;
+    @Autowired
+    private UserService userService;
 
     @Override
     public void register(String token, GoodregistrationDTO goodregistrationDTO) {
@@ -51,6 +64,27 @@ public class GoodregistrationServiceImpl extends ServiceImpl<GoodregistrationMap
         goodregistration.setUserId((long)userId);
         goodregistration.setRegistrationTime(LocalDateTime.now());
         goodregistrationMapper.insert(goodregistration);
+
+
+
+        //找积分记录，如果时间符合或者没有记录就增加一条
+        Point point = pointMapper.selectOne(new QueryWrapper<Point>().eq("name", pointName.SUBSCRIBE_ACTIVITY));
+        Long pointId = point.getId();
+        Integer pointnum = point.getPointnum();
+        Userpoint userpoints = userpointMapper.selectOne(new QueryWrapper<Userpoint>().eq("user_id", userId).eq("point_id", pointId));
+        if(userpoints==null){
+            userpointMapper.insert(new Userpoint().builder().userId(userId).pointId(pointId).updateTime(LocalDateTime.now()).build());
+            userService.addpoint(userId,pointnum);
+        }else if(userpoints.getUpdateTime().isBefore(LocalDateTime.now().minusHours(24))){
+            UpdateWrapper<Userpoint> updateWrapper = new UpdateWrapper<>();
+            updateWrapper.eq("user_id",userId).eq("point_id",pointId).set("update_time", LocalDateTime.now());
+            userpointMapper.update(null, updateWrapper);
+            userService.addpoint(userId,pointnum);
+        }
+
+
+
+
     }
 
     @Override

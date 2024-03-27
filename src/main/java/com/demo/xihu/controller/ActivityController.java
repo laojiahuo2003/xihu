@@ -33,6 +33,23 @@ public class ActivityController {
     @Autowired
     private ActivityService activityService;
 
+    @GetMapping("/activities/Info")
+    @Operation(summary = "搜索订阅的活动")
+    public Result getActivityByToken(HttpServletRequest request){
+        String token = request.getHeader("Authorization");
+        log.info("getActivityByToken：{}",token);
+        try {
+            Map<String, Object> claims = JwtUtil.parseToken(token);
+            Integer userid = (Integer) claims.get("id");
+            log.info("解析出来的id：{}",userid);
+            List<Activity> activityList=activityService.listById(userid);
+            return Result.success("token有效",activityList);
+        }catch (Exception e) {
+            return Result.error("token无效");
+        }
+    }
+
+
 
     @PostMapping("/activities/list")
     @Operation(summary = "根据条件查询活动")

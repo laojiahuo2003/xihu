@@ -12,6 +12,7 @@
         <result column="start_time" property="startTime"/>
         <result column="end_time" property="endTime"/>
         <result column="title" property="title"/>
+        <result column="is_expert" property="isExpert"/>
     </resultMap>
 <!--    <select id="selectGuestsAndActivities" resultMap="GuestActivityResultMap">-->
 <!--            SELECT-->
@@ -46,6 +47,7 @@
         g.description,
         g.video_url,
         g.avatar,
+        g.is_expert,
         a.start_time,
         a.end_time,
         a.title

@@ -1,5 +1,6 @@
 package com.demo.xihu.controller;
 
+import com.demo.xihu.config.IPConfig;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.system.ApplicationHome;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -19,12 +20,11 @@ import java.util.UUID;
 @Slf4j
 public class UploadController {
 
-    public static final String MY_IP = "http://8.130.55.70:8080";
     @PostMapping("/upload")
     public String upload(MultipartFile file) throws IOException {
         if(file==null||file.isEmpty()){
             log.info("目录路径:默认");
-            return MY_IP+"/image/1.jpg";
+            return IPConfig.MY_IP+"/image/1.jpg";
         }
         // 获取JAR包所在目录的路径
         String currentDir = System.getProperty("user.dir");
@@ -55,6 +55,6 @@ public class UploadController {
         Files.copy(file.getInputStream(), savePath);
         log.info("保存目录:{}",savePath);
         // 返回保存文件的路径字符串
-        return MY_IP+savePath.toString();
+        return IPConfig.MY_IP+savePath.toString();
     }
 }

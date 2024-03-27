@@ -2,6 +2,7 @@ package com.demo.xihu.service;
 
 import com.baomidou.mybatisplus.extension.service.IService;
 import com.demo.xihu.dto.RegistrationDTO;
+import com.demo.xihu.entity.Activity;
 import com.demo.xihu.entity.Registration;
 
 import java.util.List;
@@ -13,4 +14,5 @@ public interface RegistrationService extends IService<Registration> {
     List<Integer> findSubbyUserId(Integer userId);
 
     void cancelRegistration(String token,Long cancelActivityId);
+
 }

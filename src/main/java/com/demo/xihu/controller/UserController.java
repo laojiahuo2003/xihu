@@ -3,14 +3,19 @@ package com.demo.xihu.controller;
 
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.demo.xihu.dto.LoginbyAccountDTO;
+import com.demo.xihu.entity.Point;
 import com.demo.xihu.entity.User;
 import com.demo.xihu.exception.UserNotLoginException;
 import com.demo.xihu.result.Result;
+import com.demo.xihu.service.PointService;
 import com.demo.xihu.service.UserService;
+import com.demo.xihu.service.UserpointService;
 import com.demo.xihu.utils.JwtUtil;
 import com.demo.xihu.utils.Md5Util;
 import com.demo.xihu.utils.ThreadLocalUtil;
 import com.demo.xihu.vo.InfoUserVO;
+import com.demo.xihu.vo.PointsRecordVO;
+import com.demo.xihu.vo.PointsStatusVO;
 import com.demo.xihu.vo.loginUserVO;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -23,6 +28,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.sql.SQLIntegrityConstraintViolationException;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 @RestController
@@ -36,7 +42,62 @@ public class UserController {
     @Autowired
     private CaptchaController captchaController;
 
+    @Autowired
+    private PointService pointService;
+    @Autowired
+    private UserpointService userpointService;
 
+
+    /**
+     * 用户积分明细
+     * @return
+     */
+    @PostMapping("/pointsItem")
+    public Result getPointsItem(){
+        Map<String, Object> claims = ThreadLocalUtil.get();
+        Integer userId = (Integer) claims.get("id");
+        List<PointsRecordVO> pointsRecordVOS = userpointService.pointsRecordList(userId);
+        return Result.success(pointsRecordVOS);
+    }
+
+
+    /**
+     * 用户积分任务完成情况
+     * @return
+     */
+    @PostMapping("/pointsStatus")
+    public Result getPointStatus(){
+        Map<String, Object> claims = ThreadLocalUtil.get();
+        Integer userId = (Integer) claims.get("id");
+        List<PointsStatusVO> pointsStatusVO = userpointService.getPointsStatus(userId);
+        return Result.success(pointsStatusVO);
+    }
+
+
+    /*
+    {
+        pointname:"积分活动"
+    }
+    */
+    @PostMapping("/getpoints")
+    public Result getPoints(@RequestBody Map<String, String> params){
+        log.info("传入的参数{}",params);
+        Map<String, Object> claims = ThreadLocalUtil.get();
+        Integer userId = (Integer) claims.get("id");
+        //查出point的数据
+        Point point=pointService.getbyName(params.get("pointname"));
+        Long pointId = point.getId();
+        Integer pointnum = point.getPointnum();
+
+        //在userpoint表中操作，1未找到就增加。2找到后判断时间是否符合，符合加，不符合返回今日已签到
+        Result result = userpointService.addressPoint(userId,pointId,pointnum);//传入用户id，活动id以及活动积分
+        Integer code = result.getCode();
+        if(code.equals(0)){
+            //积分增加操作
+            userService.addpoint(userId,pointnum);
+        }
+        return result;
+    }
     /**
      * 注销接口
      * @param request
@@ -78,14 +139,16 @@ public class UserController {
             Map<String, Object> claims = JwtUtil.parseToken(token);
             Integer id = (Integer) claims.get("id");
             log.info("解析出来的id：{}",id);
-            User user = userService.getById(id);
-            InfoUserVO infoUserVO = new InfoUserVO();
-            BeanUtils.copyProperties(user,infoUserVO);
+//            User user = userService.getById(id);
+            InfoUserVO infoUserVO = userService.getById(id);
+//            InfoUserVO infoUserVO = new InfoUserVO();
+//            BeanUtils.copyProperties(user,infoUserVO);
             return Result.success("token有效",infoUserVO);
         }catch (Exception e) {
             return Result.error("token无效");
         }
     }
+
 
     @PatchMapping("/updatePwd")
     @Operation(summary = "更新用户密码")

@@ -27,4 +27,6 @@ public interface ActivityService extends IService<Activity> {
     List<ActivityListVO> listByParams(QueryActivitiesDTO queryActivitiesDTO);
 
     void changeSubCount(Long activityId, int num);
+
+    List<Activity> listById(Integer userid);
 }
