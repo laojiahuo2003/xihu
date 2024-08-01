@@ -3,10 +3,7 @@ package com.demo.xihu.controller;
 import com.demo.xihu.dto.GoodregistrationDTO;
 import com.demo.xihu.dto.RegistrationDTO;
 import com.demo.xihu.result.Result;
-import com.demo.xihu.service.ActivityService;
-import com.demo.xihu.service.GoodactivityService;
-import com.demo.xihu.service.GoodregistrationService;
-import com.demo.xihu.service.RegistrationService;
+import com.demo.xihu.service.*;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletRequest;
@@ -24,6 +21,9 @@ public class GoodregistrationController {
     private GoodregistrationService goodregistrationService;
     @Autowired
     private GoodactivityService goodactivityService;
+    @Autowired
+    private RedisService redisService;
+
 
     @PostMapping()
     @Operation(summary = "精彩活动报名")

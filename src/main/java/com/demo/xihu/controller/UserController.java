@@ -8,6 +8,7 @@ import com.demo.xihu.entity.User;
 import com.demo.xihu.exception.UserNotLoginException;
 import com.demo.xihu.result.Result;
 import com.demo.xihu.service.PointService;
+import com.demo.xihu.service.RedisService;
 import com.demo.xihu.service.UserService;
 import com.demo.xihu.service.UserpointService;
 import com.demo.xihu.utils.JwtUtil;
@@ -47,6 +48,8 @@ public class UserController {
     @Autowired
     private UserpointService userpointService;
 
+    @Autowired
+    private RedisService redisService;
 
     /**
      * 用户积分明细
@@ -107,6 +110,7 @@ public class UserController {
     public Result logout(HttpServletRequest request){
         String token = request.getHeader("Authorization");
         //userService.logout(token);
+        redisService.remove(token);
         return Result.success("注销成功");
     }
 
@@ -266,6 +270,9 @@ public class UserController {
             loginUserVO loginUserVO=new loginUserVO();
             BeanUtils.copyProperties(loginUser,loginUserVO);
             loginUserVO.setToken(token);
+            //同时存入redis
+            redisService.set(token,token);
+            redisService.expire(token,60*60*24*7);
             return Result.success("登陆成功",loginUserVO);
         }
         return Result.error("密码错误");

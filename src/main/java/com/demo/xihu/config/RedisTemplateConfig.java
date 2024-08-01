@@ -18,8 +18,7 @@ public class RedisTemplateConfig {
 
     @Bean
     public RedisTemplate<Object, Object> redisTemplate(RedisConnectionFactory redisConnectionFactory) {
-        RedisTemplate<Object, Object>
-                redisTemplate = new RedisTemplate<>();
+        RedisTemplate<Object, Object>  redisTemplate = new RedisTemplate<>();
 
         redisTemplate.setConnectionFactory(redisConnectionFactory);
         // 使⽤Jackson2JsonRedisSerialize 替换默认序列化

@@ -5,6 +5,11 @@ spring:
     url: jdbc:mysql://localhost:3306/xihu?useUnicode=true&characterEncoding=UTF-8&serverTimezone=Asia/Shanghai&autoReconnect=true
     username: root
     password: 1234
+  servlet:
+    multipart:
+      max-file-size: 50MB #单个文件最大大小
+      max-request-size: 50MB #一次请求中所有上传文件的总大小
+
     # 连接池配置
     druid:
       max-active: 5 # 最大活跃数量 默认8

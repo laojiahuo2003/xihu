@@ -114,6 +114,10 @@ public class SmsCtrlController {
         loginUserVO loginUserVO = new loginUserVO();
         BeanUtils.copyProperties(loginUser, loginUserVO);
         loginUserVO.setToken(token);
+
+        //同时存入redis
+        redisService.set(token,token);
+        redisService.expire(token,60*60*24*7);
         return Result.success("登陆成功", loginUserVO);
 
     }

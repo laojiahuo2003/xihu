@@ -15,6 +15,7 @@ import com.demo.xihu.mapper.GoodregistrationMapper;
 import com.demo.xihu.mapper.PointMapper;
 import com.demo.xihu.mapper.UserpointMapper;
 import com.demo.xihu.service.GoodregistrationService;
+import com.demo.xihu.service.RedisService;
 import com.demo.xihu.service.UserService;
 import com.demo.xihu.utils.JwtUtil;
 import org.springframework.beans.BeanUtils;
@@ -37,6 +38,8 @@ public class GoodregistrationServiceImpl extends ServiceImpl<GoodregistrationMap
     private PointMapper pointMapper;
     @Autowired
     private UserService userService;
+    @Autowired
+    private RedisService redisService;
 
     @Override
     public void register(String token, GoodregistrationDTO goodregistrationDTO) {
@@ -67,6 +70,7 @@ public class GoodregistrationServiceImpl extends ServiceImpl<GoodregistrationMap
 
 
 
+
         //找积分记录，如果时间符合或者没有记录就增加一条
         Point point = pointMapper.selectOne(new QueryWrapper<Point>().eq("name", pointName.SUBSCRIBE_ACTIVITY));
         Long pointId = point.getId();
@@ -82,7 +86,7 @@ public class GoodregistrationServiceImpl extends ServiceImpl<GoodregistrationMap
             userService.addpoint(userId,pointnum);
         }
 
-
+        redisService.remove("goodactlist_"+userId);
 
 
     }
@@ -109,6 +113,7 @@ public class GoodregistrationServiceImpl extends ServiceImpl<GoodregistrationMap
         //操作数据库，删除报名信息
         QueryWrapper<Goodregistration> goodregistrationQueryWrapper = new QueryWrapper<Goodregistration>().eq("user_id", userId).eq("goodactivity_id", cancelActivityId);
         goodregistrationMapper.delete(goodregistrationQueryWrapper);
+        redisService.remove("goodactlist_"+userId);
     }
 
     @Override

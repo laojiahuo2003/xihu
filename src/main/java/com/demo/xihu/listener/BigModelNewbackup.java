@@ -4,7 +4,6 @@ package com.demo.xihu.listener;
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONArray;
 import com.alibaba.fastjson.JSONObject;
-import com.demo.xihu.serverwebsocket.WebSocket2;
 import com.google.gson.Gson;
 import jakarta.websocket.Session;
 import okhttp3.*;
@@ -17,7 +16,10 @@ import java.nio.charset.StandardCharsets;
 import java.text.SimpleDateFormat;
 import java.util.*;
 
-public class BigModelNew extends WebSocketListener {
+/**
+ * 备份
+ */
+public class BigModelNewbackup extends WebSocketListener {
     private Session session;
     public static final String hostUrl = "https://spark-api.xf-yun.com/v3.5/chat";
     public static final String appid = "452f8576";
@@ -39,7 +41,7 @@ public class BigModelNew extends WebSocketListener {
 
     private static Boolean totalFlag=true; // 控制提示用户是否输入
     // 构造函数
-    public BigModelNew(String userId, Boolean wsCloseFlag,Session session) {
+    public BigModelNewbackup(String userId, Boolean wsCloseFlag, Session session) {
         this.userId = userId;
         this.wsCloseFlag = wsCloseFlag;
         this.session=session;
@@ -117,11 +119,11 @@ public class BigModelNew extends WebSocketListener {
                 JSONArray text=new JSONArray();
 
                 // 历史问题获取，放入text
-//                if(historyList.size()>0){
-//                    for(RoleContent tempRoleContent:historyList){
-//                        text.add(JSON.toJSON(tempRoleContent));
-//                    }
-//                }
+                if(historyList.size()>0){
+                    for(RoleContent tempRoleContent:historyList){
+                        text.add(JSON.toJSON(tempRoleContent));
+                    }
+                }
 
                 // 最新问题
                 RoleContent roleContent=new RoleContent();

@@ -1,6 +1,8 @@
 package com.demo.xihu.controller;
 
+import com.alibaba.fastjson.JSON;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
+import com.demo.xihu.config.RedisTemplateConfig;
 import com.demo.xihu.dto.QueryActivitiesDTO;
 import com.demo.xihu.dto.QueryGoodactivitiesDTO;
 import com.demo.xihu.entity.Activity;
@@ -9,6 +11,7 @@ import com.demo.xihu.mapper.GoodactivityMapper;
 import com.demo.xihu.result.Result;
 import com.demo.xihu.service.GoodactivityService;
 import com.demo.xihu.service.GoodregistrationService;
+import com.demo.xihu.service.RedisService;
 import com.demo.xihu.service.RegistrationService;
 import com.demo.xihu.utils.JwtUtil;
 import com.demo.xihu.vo.ActivityListVO;
@@ -33,7 +36,8 @@ public class GoodactivityController {
     private GoodactivityService goodactivityService;
     @Autowired
     private GoodregistrationService goodregistrationService;
-
+    @Autowired
+    private RedisService redisService;
 
     @GetMapping("/goodactivities/Info")
     @Operation(summary = "搜索订阅的活动")
@@ -44,7 +48,18 @@ public class GoodactivityController {
             Map<String, Object> claims = JwtUtil.parseToken(token);
             Integer userid = (Integer) claims.get("id");
             log.info("解析出来的id：{}",userid);
-            List<Goodactivity> activityList=goodactivityService.listById(userid);
+            //这里利用redis减轻数据库压力
+            List<Goodactivity> activityList;
+            if(redisService.get("goodactlist_"+userid)!=null){
+                System.out.println("从缓存里拿到了"+redisService.get("actlist_" + userid));
+                activityList =(List<Goodactivity>)JSON.parse( redisService.get("actlist_" + userid) );
+                //activityList=goodactivityService.listById(userid);
+            }else{
+                activityList=goodactivityService.listById(userid);
+                redisService.set("goodactlist_"+userid,JSON.toJSONString( activityList));
+                System.out.println("放入redis:"+JSON.toJSONString( activityList));
+            }
+
             return Result.success("token有效",activityList);
         }catch (Exception e) {
             return Result.error("token无效");
