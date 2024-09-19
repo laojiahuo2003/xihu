@@ -2,6 +2,7 @@ package com.demo.xihu.config;
 
 import com.demo.xihu.interceptors.AdminAccessInterceptor;
 import com.demo.xihu.interceptors.LoginInterceptor;
+import com.demo.xihu.interceptors.RefreshTokenInterceptor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.web.servlet.config.annotation.InterceptorRegistry;
@@ -14,18 +15,25 @@ public class WebConfig implements WebMvcConfigurer {
     private LoginInterceptor loginInterceptor;
     @Autowired
     private AdminAccessInterceptor adminAccessInterceptor;
-
+    @Autowired
+    private RefreshTokenInterceptor refreshTokenInterceptor;
 
     @Override
     public void addInterceptors(InterceptorRegistry registry) {
         //添加登录拦截器
-        registry.addInterceptor(loginInterceptor).excludePathPatterns("/dev-api/user/login","/dev-api/user/register","/swagger-ui/**", "/v3/api-docs/**","/dev-api/activities/list/**","/dev-api/captcha/**","/dev-api/sms/**","/dev-api/comment/**","/dev-api/user/token","/dev-api/upload","/image/**")
-                .excludePathPatterns("/dev-api/goodactivities/list/**")
-                .excludePathPatterns("/dev-api/guests/**")
-                .excludePathPatterns("/dev-api/poster/**")
-                .excludePathPatterns("/dev-api/images/**");
+        registry.addInterceptor(loginInterceptor)
+                .addPathPatterns("/user/**")
+                .excludePathPatterns("/user/login")
+                        .excludePathPatterns("/admin/**")
+                                .addPathPatterns("/goodactivities/**").
+                addPathPatterns("/goodregistration/**")
+                        .addPathPatterns("/registration/**")
+                                .addPathPatterns("/activities/Info")
+                .addPathPatterns("/activities/list").addPathPatterns("/ticket-order/**").order(1);
         // 添加管理员权限拦截器，拦截所有admin开头的路径
-        registry.addInterceptor(adminAccessInterceptor).addPathPatterns("/dev-api/admin/**");
+        registry.addInterceptor(adminAccessInterceptor).addPathPatterns("/admin/**");
+        // 添加token有效期刷新拦截器
+        registry.addInterceptor(refreshTokenInterceptor).addPathPatterns("/**").order(0);
     }
     @Override
     public void addResourceHandlers(ResourceHandlerRegistry registry) {

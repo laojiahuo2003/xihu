@@ -18,7 +18,7 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
 @RestController
-@RequestMapping("dev-api")
+@RequestMapping("/guests")
 @Slf4j
 @Tag(name = "嘉宾相关接口", description = "这是描述")
 public class GuestController {
@@ -33,7 +33,7 @@ public class GuestController {
      * @param guestListDTO
      * @return
      */
-    @PostMapping("/guests/list")
+    @PostMapping("/list")
     @Operation(summary = "根据条件查询嘉宾")
     public Result queryGuestsAndGoodactivity(@RequestBody GuestListDTO guestListDTO){
         List<GuestShowVO> guestShowVO = guestService.getGuestsList(guestListDTO);
@@ -44,7 +44,7 @@ public class GuestController {
      * 查询所有嘉宾数据和他的参会信息
      * @return
      */
-    @GetMapping("/guests/allInfo")
+    @GetMapping("/allInfo")
     @Operation(summary = "查询所有的嘉宾信息")
     public Result queryAllGuestsAndGoodactivity(){
         List<GuestShowVO> guestShowVO = guestService.getGuests();

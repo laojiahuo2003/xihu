@@ -1,10 +1,12 @@
 package com.demo.xihu.controller;
 
+import com.alibaba.fastjson.JSONObject;
 import com.aliyuncs.dysmsapi.model.v20170525.SendSmsResponse;
 import com.aliyuncs.exceptions.ClientException;
 import com.aliyuncs.utils.StringUtils;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.demo.xihu.config.IPConfig;
+import com.demo.xihu.constant.RedisConstant;
 import com.demo.xihu.dto.LoginByPhoneDTO;
 import com.demo.xihu.dto.PhoneDTO;
 import com.demo.xihu.dto.RegisterDTO;
@@ -19,6 +21,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
@@ -26,15 +29,19 @@ import org.springframework.web.multipart.MultipartFile;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.TimeUnit;
 
 @RestController
-@RequestMapping("/dev-api/sms")
+@RequestMapping("/sms")
 @Slf4j
 public class SmsCtrlController {
 
-    @Autowired
-    private RedisService redisService;
     private String tokenId = "TOKEN-USER-";
+
+//    @Autowired
+//    private RedisService redisService;
+@Autowired
+private StringRedisTemplate stringRedisTemplate;
     @Autowired
     private CaptchaController captchaController;
     @Autowired
@@ -62,8 +69,10 @@ public class SmsCtrlController {
         //SendSmsResponse response = SmsTool.sendSms(phone, TemplateParam);
         if (true/*response.getCode().equals("OK")*/) {
             // 验证码绑定手机号并存储到redis
-            redisService.set(tokenId + phone, code);
-            redisService.expire(tokenId + phone, 620); // 调用redis工具类中存储方法设置超时时间
+            stringRedisTemplate.opsForValue().set(tokenId+phone,code);
+            stringRedisTemplate.opsForValue().set(tokenId+phone,code,600, TimeUnit.SECONDS);
+//            redisService.set(tokenId + phone, code);
+//            redisService.expire(tokenId + phone, 620); // 调用redis工具类中存储方法设置超时时间
             return Result.success("发送成功");
         }
         return Result.error("发送失败");
@@ -116,8 +125,9 @@ public class SmsCtrlController {
         loginUserVO.setToken(token);
 
         //同时存入redis
-        redisService.set(token,token);
-        redisService.expire(token,60*60*24*7);
+        stringRedisTemplate.opsForValue().set(RedisConstant.LOGIN_USER_KEY+token, JSONObject.toJSONString(claims),60*60*24*7);
+//        redisService.set(RedisConstant.LOGIN_USER_KEY+token,token);
+//        redisService.expire(RedisConstant.LOGIN_USER_KEY+token,60*60*24*7);
         return Result.success("登陆成功", loginUserVO);
 
     }

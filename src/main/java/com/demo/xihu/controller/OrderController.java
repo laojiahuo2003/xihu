@@ -12,7 +12,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
-@RequestMapping("dev-api/order")
+@RequestMapping("/order")
 @Slf4j
 @Tag(name = "订单相关接口", description = "这是描述")
 public class OrderController {

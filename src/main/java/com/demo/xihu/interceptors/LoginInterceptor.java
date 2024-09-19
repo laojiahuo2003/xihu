@@ -9,6 +9,7 @@ import com.demo.xihu.utils.ThreadLocalUtil;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Component;
 import org.springframework.web.servlet.HandlerInterceptor;
 
@@ -25,9 +26,23 @@ public class LoginInterceptor implements HandlerInterceptor {
 
 
     @Autowired
-    private RedisService redisService;
+    private StringRedisTemplate stringRedisTemplate;
 
     @Override
+    public boolean preHandle(HttpServletRequest request, HttpServletResponse response, Object handler) throws Exception {
+
+
+        // 从ThreadLocal获取当前用户
+        Map<String, Object> claims = ThreadLocalUtil.get();
+        // 不存在就进行拦截
+        if(claims==null){
+            //token已经失效或不存在
+            throw new UserNotLoginException("用户token失效或不存在");
+        }
+        return true;
+    }
+
+/*    @Override
     public boolean preHandle(HttpServletRequest request, HttpServletResponse response, Object handler) throws Exception {
         //令牌验证
         String token = request.getHeader("Authorization");
@@ -49,7 +64,7 @@ public class LoginInterceptor implements HandlerInterceptor {
             throw new UserNotLoginException("用户未登录");
             //return false;
         }
-    }
+    }*/
 
     @Override
     public void afterCompletion(HttpServletRequest request, HttpServletResponse response, Object handler, Exception ex) throws Exception {

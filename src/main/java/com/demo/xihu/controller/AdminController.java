@@ -1,8 +1,10 @@
 package com.demo.xihu.controller;
 
+import com.demo.xihu.entity.Activity;
 import com.demo.xihu.entity.User;
 import com.demo.xihu.exception.UnauthorizedAccessException;
 import com.demo.xihu.result.Result;
+import com.demo.xihu.service.ActivityService;
 import com.demo.xihu.service.UserService;
 import com.demo.xihu.utils.Md5Util;
 import com.demo.xihu.utils.ThreadLocalUtil;
@@ -17,14 +19,15 @@ import java.util.Map;
 
 
 @RestController
-@RequestMapping("/dev-api/admin")
+@RequestMapping("/admin")
 @Slf4j
 @Tag(name = "管理员相关接口", description = "这是描述")
 public class AdminController {
 
     @Autowired
     private UserService userService;
-
+    @Autowired
+    private ActivityService activityService;
     /**
      * 根据id查询信息
      * @param id
@@ -88,5 +91,48 @@ public class AdminController {
         user.setPassword(Md5Util.getMD5String(user.getPassword()));
         userService.save(user);
         return Result.success("添加成功");
+    }
+
+
+    /**
+     * 添加活动
+     * @param activity
+     * @return
+     */
+    @PostMapping("/activities")
+    @Operation(summary = "管理员增加活动")
+    public Result createActivity(@RequestBody Activity activity) {
+        log.info("添加的活动:{}",activity);
+        if(activity.getTitle()==null) return Result.error("活动名不能为空");
+        activityService.createActivity(activity);
+        return Result.success("添加成功");
+    }
+    /**
+     * 根据id更新活动信息
+     * @param activity
+     * @return
+     */
+    @PutMapping("/activities")
+    @Operation(summary = "根据id更新活动信息")
+    public Result updateActivity(@RequestBody Activity activity) {
+        log.info("活动id:{}",activity.getId());
+        if(activity.getId()==null) return Result.error("活动id缺失");
+        activityService.updateActivity(activity);
+        return Result.success("更新成功");
+    }
+
+
+    /**
+     * 根据id删除活动信息
+     * @param id
+     * @return
+     */
+    @DeleteMapping("/activities/{id}")
+    @Operation(summary = "根据id删除活动信息")
+    public Result deleteActivity(@PathVariable Long id) {
+        log.info("活动id:{}",id);
+        if(activityService.getById(id)==null) return Result.error("活动不存在");
+        activityService.deleteActivity(id);
+        return Result.success("删除成功");
     }
 }

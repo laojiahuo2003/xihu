@@ -42,18 +42,13 @@ public class GoodregistrationServiceImpl extends ServiceImpl<GoodregistrationMap
     private RedisService redisService;
 
     @Override
-    public void register(String token, GoodregistrationDTO goodregistrationDTO) {
+    public void register(Integer userId, GoodregistrationDTO goodregistrationDTO) {
         //检验活动是否存在
         Long activityId = goodregistrationDTO.getActivityId();
         if(goodactivityMapper.selectById(activityId)==null) throw new BaseException("活动id无效");
         //解析当前登录id
-        try {
-            Map<String, Object> claims = JwtUtil.parseToken(token);
-        }catch (Exception e) {
-            throw new UserNotLoginException("token失效,请重新登录");
-        }
-        Map<String, Object> claims = JwtUtil.parseToken(token);
-        Integer userId = (Integer) claims.get("id");
+
+//        Integer userId = (Integer) claims.get("id");
         //检验是否重复报名
         QueryWrapper<Goodregistration> queryWrapper = new QueryWrapper<>();
         queryWrapper.eq("user_id", userId).eq("goodactivity_id", activityId);
@@ -64,7 +59,7 @@ public class GoodregistrationServiceImpl extends ServiceImpl<GoodregistrationMap
         //操作数据库，插入报名信息
         Goodregistration goodregistration = new Goodregistration();
         BeanUtils.copyProperties(goodregistrationDTO,goodregistration);
-        goodregistration.setUserId((long)userId);
+        goodregistration.setUserId(Long.valueOf(userId));
         goodregistration.setRegistrationTime(LocalDateTime.now());
         goodregistrationMapper.insert(goodregistration);
 
@@ -77,6 +72,7 @@ public class GoodregistrationServiceImpl extends ServiceImpl<GoodregistrationMap
         Integer pointnum = point.getPointnum();
         Userpoint userpoints = userpointMapper.selectOne(new QueryWrapper<Userpoint>().eq("user_id", userId).eq("point_id", pointId));
         if(userpoints==null){
+
             userpointMapper.insert(new Userpoint().builder().userId(userId).pointId(pointId).updateTime(LocalDateTime.now()).build());
             userService.addpoint(userId,pointnum);
         }else if(userpoints.getUpdateTime().isBefore(LocalDateTime.now().minusHours(24))){
@@ -92,17 +88,10 @@ public class GoodregistrationServiceImpl extends ServiceImpl<GoodregistrationMap
     }
 
     @Override
-    public void cancelRegistration(String token, Long cancelActivityId) {
+    public void cancelRegistration(Integer userId, Long cancelActivityId) {
         //检验活动是否存在
         if(cancelActivityId==null||goodactivityMapper.selectById(cancelActivityId)==null) throw new BaseException("活动id无效");
-        //解析当前登录id
-        try {
-            Map<String, Object> claims = JwtUtil.parseToken(token);
-        }catch (Exception e) {
-            throw new UserNotLoginException("token失效,请重新登录");
-        }
-        Map<String, Object> claims = JwtUtil.parseToken(token);
-        Integer userId = (Integer) claims.get("id");
+
         //检验是否重复取消
         QueryWrapper<Goodregistration> queryWrapper = new QueryWrapper<>();
         queryWrapper.eq("user_id", userId).eq("goodactivity_id", cancelActivityId);

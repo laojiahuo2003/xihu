@@ -17,7 +17,7 @@ import java.util.concurrent.TimeUnit;
 
 @RestController
 @Tag(name = "生成海报相关接口", description = "无")
-@RequestMapping("dev-api/poster/baidu")
+@RequestMapping("/poster/baidu")
 @Slf4j
 @Tag(name = "生成海报相关接口", description = "无")
 public class PosterBaiduController {

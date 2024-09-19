@@ -15,7 +15,7 @@ import java.util.Map;
  * 评论控制类
  */
 @RestController
-@RequestMapping("/dev-api/comment")
+@RequestMapping("/comment")
 public class CommentController {
 
     @Autowired

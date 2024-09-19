@@ -16,7 +16,7 @@ import java.nio.file.Paths;
 import java.util.UUID;
 
 @RestController
-@RequestMapping("/dev-api")
+@RequestMapping("/")
 @Slf4j
 public class UploadController {
 

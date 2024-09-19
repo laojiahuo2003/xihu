@@ -1,59 +1,210 @@
 package com.demo.xihu.controller;
 
+import com.alibaba.fastjson.JSON;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
+import com.demo.xihu.bo.RedisActivityData;
+import com.demo.xihu.constant.CacheConstant;
 import com.demo.xihu.dto.DateActivitiesVO;
 import com.demo.xihu.dto.QueryActivitiesDTO;
 import com.demo.xihu.entity.Activity;
 import com.demo.xihu.result.Result;
 import com.demo.xihu.service.ActivityService;
+import com.demo.xihu.service.RedisService;
 import com.demo.xihu.service.RegistrationService;
 import com.demo.xihu.utils.JwtUtil;
+import com.demo.xihu.utils.ThreadLocalUtil;
 import com.demo.xihu.vo.ActivityListVO;
+import com.github.benmanes.caffeine.cache.Cache;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.BooleanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.cache.annotation.Cacheable;
+import org.springframework.cache.caffeine.CaffeineCache;
+import org.springframework.data.redis.core.RedisTemplate;
+import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.web.bind.annotation.*;
 
+import java.time.LocalDateTime;
+import java.util.Collections;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ThreadLocalRandom;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.locks.ReentrantLock;
 import java.util.stream.Collectors;
 
 @RestController
-@RequestMapping("dev-api")
+@RequestMapping("/activities")
 @Slf4j
 @Tag(name = "活动(大会)相关接口", description = "这是描述")
 public class ActivityController {
+
+    private static final ExecutorService CACHE_REBUILD_EXECUTOR = Executors.newFixedThreadPool(10);
+//    private final ReentrantLock lock = new ReentrantLock(); // 局部锁
 
     @Autowired
     private RegistrationService registrationService;
     @Autowired
     private ActivityService activityService;
+    @Autowired
+    private Cache<String, Object> cache;
+    @Autowired
+    private StringRedisTemplate stringRedisTemplate;
 
-    @GetMapping("/activities/Info")
+    private boolean tryLock(String key) {
+        // 设置10秒钟过期时间,设置成功则value变成1，返回true
+        Boolean flag = stringRedisTemplate.opsForValue().setIfAbsent(key, "1", 10, TimeUnit.SECONDS);
+        return BooleanUtils.isTrue(flag);
+    }
+
+    private void unlock(String key) {
+        stringRedisTemplate.delete(key);
+    }
+    /**
+     * 选择使用两级缓存,Redis+Caffeine提高查询速度
+     * @return
+     */
+    @GetMapping("/Info")
     @Operation(summary = "搜索订阅的活动")
-    public Result getActivityByToken(HttpServletRequest request){
-        String token = request.getHeader("Authorization");
-        log.info("getActivityByToken：{}",token);
+    public Result getActivityByToken() {
+        Map<String, Object> claims = ThreadLocalUtil.get();
+        Integer userid = (Integer) claims.get("id");
+        log.info("ActivityController getActivityByToken 搜索订阅的活动 用户id{}", userid);
+
+        String key = CacheConstant.ACTIVITY_REGISTER + userid;
+
+        @SuppressWarnings("unchecked")
+        List<Activity> activityList = (List<Activity>) cache.get(key, k -> {
+            log.info("缓存未命中，查询Redis，userid: {}", userid);
+
+            RedisActivityData redisActivityData = getRedisActivityData(k, userid);
+
+            if (redisActivityData != null) {
+                if (redisActivityData.getExpireTime().isAfter(LocalDateTime.now())) {
+                    log.info("查询Redis,缓存未过期，直接返回，userid: {}", userid);
+                    return redisActivityData.getActivityList();
+                } else {
+                    log.info("redis缓存已过期，尝试重建缓存，userid: {}", userid);
+                    attemptCacheRebuild(redisActivityData, k, userid);
+                    return redisActivityData.getActivityList();
+                }
+            }
+
+            // Redis无数据，查询数据库并更新缓存
+            return queryAndCacheFromDatabase(k, userid);
+        });
+
+        return Result.success(activityList);
+    }
+
+    private RedisActivityData getRedisActivityData(String key, Integer userid) {
         try {
-            Map<String, Object> claims = JwtUtil.parseToken(token);
-            Integer userid = (Integer) claims.get("id");
-            log.info("解析出来的id：{}",userid);
-            List<Activity> activityList=activityService.listById(userid);
-            return Result.success("token有效",activityList);
-        }catch (Exception e) {
-            return Result.error("token无效");
+//            String redisData = redisService.get(key);
+            String redisData = stringRedisTemplate.opsForValue().get(key);
+            return JSON.parseObject(redisData, RedisActivityData.class);
+        } catch (Exception e) {
+            log.error("Redis查询失败，用户ID: {}, 错误信息: {}", userid, e.getMessage());
+            return null;
         }
     }
 
 
 
-    @PostMapping("/activities/list")
+    /**
+     * 开启新线程尝试重建缓存
+     * @param redisActivityData
+     * @param key
+     * @param userid
+     */
+    private void attemptCacheRebuild(RedisActivityData redisActivityData, String key, Integer userid) {
+        boolean lockAcquired = false;
+        String lockKey = "lockKey"+userid;
+        try {
+            lockAcquired = tryLock(lockKey); // 尝试获取锁
+
+            if (lockAcquired) {
+                log.info("成功获取锁，开始重建缓存，userid: {}", userid);
+                CACHE_REBUILD_EXECUTOR.submit(() -> rebuildCache(key, userid));
+            } else {
+                log.warn("未能获取锁，缓存重建正在进行中，userid: {}", userid);
+            }
+        } catch (Exception e) {
+            log.error("获取锁时发生异常，用户ID: {}, 错误信息: {}", userid, e.getMessage());
+        } finally {
+            // 只有获取锁成功时才释放锁
+            if (lockAcquired) {
+                unlock(lockKey);
+                log.info("锁释放成功，userid: {}", userid);
+            }
+        }
+    }
+
+
+    /**
+     * 重建缓存
+     * @param key
+     * @param userid
+     */
+    private void rebuildCache(String key, Integer userid) {
+        try {
+            List<Activity> activityList = activityService.listById(userid);
+            updateCache(key, activityList);
+        } catch (Exception e) {
+            log.error("缓存重建失败，用户ID: {}, 错误信息: {}", userid, e.getMessage());
+        }
+    }
+
+    /**
+     * 查询数据库并且更新缓存
+     * @param key
+     * @param userid
+     * @return
+     */
+    private List<Activity> queryAndCacheFromDatabase(String key, Integer userid) {
+        try {
+            log.info("查询数据库，userid: {}", userid);
+            List<Activity> activityList = activityService.listById(userid);
+            updateCache(key, activityList);
+            return activityList;
+        } catch (Exception e) {
+            log.error("数据库查询失败，用户ID: {}, 错误信息: {}", userid, e.getMessage());
+            return Collections.emptyList();
+        }
+    }
+
+    /**
+     * 更新缓存(逻辑过期时间，避免缓存击穿，Redis中一个热点key在失效的同时，大量的请求过来，从而会全部到达数据库，压垮数据库。)
+     * @param key
+     * @param activityList
+     */
+    private void updateCache(String key, List<Activity> activityList) {
+        try {
+            int randomSeconds = ThreadLocalRandom.current().nextInt(0, 20); // 生成随机数,避免缓存雪崩
+            RedisActivityData redisActivityData = new RedisActivityData();
+            redisActivityData.setActivityList(activityList);
+            redisActivityData.setExpireTime(LocalDateTime.now().plusSeconds(CacheConstant.LOG_EXPIRETIME+randomSeconds));
+//            redisService.set(key, JSON.toJSONString(redisActivityData));
+            stringRedisTemplate.opsForValue().set(key,JSON.toJSONString(redisActivityData));
+            cache.put(key, activityList);
+            log.info("缓存更新成功，key: {}", key);
+        } catch (Exception e) {
+            log.error("缓存更新失败，key: {}, 错误信息: {}", key, e.getMessage());
+        }
+    }
+
+
+
+
+    @PostMapping("/list")
     @Operation(summary = "根据条件查询活动")
-    public Result queryActivities(@RequestBody QueryActivitiesDTO queryActivitiesDTO, HttpServletRequest request) {
+    public Result queryActivities(@RequestBody QueryActivitiesDTO queryActivitiesDTO) {
         Integer num = queryActivitiesDTO.getNum();
         if(num==null||num<=-1){
             queryActivitiesDTO.setNum(null);
@@ -61,11 +212,10 @@ public class ActivityController {
         System.out.println(queryActivitiesDTO);
         //根据条件选择
         List<ActivityListVO> activityListVO = activityService.listByParams(queryActivitiesDTO);
-        String token = request.getHeader("Authorization");
-        //尝试从token获取id
-        try {
-            Map<String, Object> claims = JwtUtil.parseToken(token);
-            Integer userId = (Integer) claims.get("id");
+
+        Map<String, Object> claims = ThreadLocalUtil.get();
+        Integer userId = (Integer) claims.get("id");
+        log.info("解析出来的id：{}",userId);
             List<Integer> activityIds = registrationService.findSubbyUserId(userId);
             for (ActivityListVO vo : activityListVO) {
                 Long voId = vo.getId(); // 获取当前 ActivityListVO 对象的 ID
@@ -74,9 +224,6 @@ public class ActivityController {
                     vo.setIsSub(1);  // 假设 setIsSub 是用来设置 isSub 属性的方法
                 }
             }
-        }catch (Exception e){
-
-        }
 
         return Result.success("查找成功",activityListVO);
     }
@@ -86,7 +233,7 @@ public class ActivityController {
      * @param title
      * @return
      */
-    @GetMapping("/activities/search")
+    @GetMapping("/search")
     @Operation(summary = "模糊查询活动title")
     public Result searchActivities(@RequestParam String title) {
         log.info("活动名称:{}",title);
@@ -101,7 +248,7 @@ public class ActivityController {
      * @param location
      * @return
      */
-    @GetMapping("/activities/filter")
+    @GetMapping("/filter")
     @Operation(summary = "组合条件查询活动")
     public Result filterActivities(
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) Date startDate,
@@ -113,19 +260,6 @@ public class ActivityController {
     }
 
 
-    /**
-     * 添加活动
-     * @param activity
-     * @return
-     */
-    @PostMapping("/admin/activities")
-    @Operation(summary = "管理员增加活动")
-    public Result createActivity(@RequestBody  Activity activity) {
-        log.info("添加的活动:{}",activity);
-        if(activity.getTitle()==null) return Result.error("活动名不能为空");
-        activityService.createActivity(activity);
-        return Result.success("添加成功");
-    }
 
 
     /**
@@ -134,7 +268,7 @@ public class ActivityController {
      * @param pageSize
      * @return
      */
-    @GetMapping("/activities/pagelist")
+    @GetMapping("/pagelist")
     @Operation(summary = "分页查询所有活动")
     public Result<Page<Activity>> getActivitiesByPage(
             @RequestParam(defaultValue = "1") int pageNo,
@@ -144,32 +278,4 @@ public class ActivityController {
         return Result.success("查询成功",page);
     }
 
-    /**
-     * 根据id更新活动信息
-     * @param activity
-     * @return
-     */
-    @PutMapping("/admin/activities")
-    @Operation(summary = "根据id更新活动信息")
-    public Result updateActivity(@RequestBody Activity activity) {
-        log.info("活动id:{}",activity.getId());
-        if(activity.getId()==null) return Result.error("活动id缺失");
-        activityService.updateActivity(activity);
-        return Result.success("更新成功");
-    }
-
-
-    /**
-     * 根据id删除活动信息
-     * @param id
-     * @return
-     */
-    @DeleteMapping("/admin/activities/{id}")
-    @Operation(summary = "根据id删除活动信息")
-    public Result deleteActivity(@PathVariable Long id) {
-        log.info("活动id:{}",id);
-        if(activityService.getById(id)==null) return Result.error("活动不存在");
-        activityService.deleteActivity(id);
-        return Result.success("删除成功");
-    }
 }

@@ -1,7 +1,9 @@
 package com.demo.xihu.controller;
 
 
+import com.alibaba.fastjson.JSONObject;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
+import com.demo.xihu.constant.RedisConstant;
 import com.demo.xihu.dto.LoginbyAccountDTO;
 import com.demo.xihu.entity.Point;
 import com.demo.xihu.entity.User;
@@ -25,6 +27,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.hibernate.validator.constraints.URL;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.web.bind.annotation.*;
 
 import java.sql.SQLIntegrityConstraintViolationException;
@@ -33,7 +36,7 @@ import java.util.List;
 import java.util.Map;
 
 @RestController
-@RequestMapping("/dev-api/user")
+@RequestMapping("/user")
 @Slf4j
 @Tag(name = "用户相关接口", description = "这是描述")
 public class UserController {
@@ -49,7 +52,7 @@ public class UserController {
     private UserpointService userpointService;
 
     @Autowired
-    private RedisService redisService;
+    private StringRedisTemplate stringRedisTemplate;
 
     /**
      * 用户积分明细
@@ -110,7 +113,7 @@ public class UserController {
     public Result logout(HttpServletRequest request){
         String token = request.getHeader("Authorization");
         //userService.logout(token);
-        redisService.remove(token);
+        stringRedisTemplate.delete(token);
         return Result.success("注销成功");
     }
 
@@ -271,8 +274,10 @@ public class UserController {
             BeanUtils.copyProperties(loginUser,loginUserVO);
             loginUserVO.setToken(token);
             //同时存入redis
-            redisService.set(token,token);
-            redisService.expire(token,60*60*24*7);
+            String key  = RedisConstant.LOGIN_USER_KEY + token;
+            stringRedisTemplate.opsForValue().set(key, JSONObject.toJSONString(claims),60*60*24*7);
+//            redisService.set(token,token);
+//            redisService.expire(token,60*60*24*7);
             return Result.success("登陆成功",loginUserVO);
         }
         return Result.error("密码错误");

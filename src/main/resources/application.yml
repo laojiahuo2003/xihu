@@ -54,3 +54,5 @@ sky:
     user-secret-key: laojiahuo
     user-ttl: 7200000
     user-token-name: authentication
+
+

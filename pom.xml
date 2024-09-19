@@ -165,6 +165,17 @@
             <artifactId>spring-boot-starter-websocket</artifactId>
         </dependency>
 
+        <!--caffeine本地缓存-->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-cache</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.github.ben-manes.caffeine</groupId>
+            <artifactId>caffeine</artifactId>
+            <version>2.9.2</version>
+        </dependency>
+
     </dependencies>
 
     <build>

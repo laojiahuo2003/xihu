@@ -26,7 +26,7 @@ import java.util.UUID;
 import static com.demo.xihu.utils.IdentityUrlUtil.getAuthUrl;
 
 @RestController
-@RequestMapping("dev-api/poster")
+@RequestMapping("/poster")
 @Slf4j
 @Tag(name = "生成海报相关接口", description = "无")
 public class PosterController {

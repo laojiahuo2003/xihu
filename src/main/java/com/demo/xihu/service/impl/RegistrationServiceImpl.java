@@ -43,20 +43,13 @@ public class RegistrationServiceImpl extends ServiceImpl<RegistrationMapper, Reg
     private UserService userService;
     /**
      * 取消活动
-     * @param token
+     * @param userId
      * @param cancelActivityId
      */
-    public void cancelRegistration(String token,Long cancelActivityId) {
+    public void cancelRegistration(Integer userId,Long cancelActivityId) {
         //检验活动是否存在
         if(cancelActivityId==null||activityMapper.selectById(cancelActivityId)==null) throw new BaseException("活动id无效");
-        //解析当前登录id
-        try {
-            Map<String, Object> claims = JwtUtil.parseToken(token);
-        }catch (Exception e) {
-            throw new UserNotLoginException("token失效,请重新登录");
-        }
-        Map<String, Object> claims = JwtUtil.parseToken(token);
-        Integer userId = (Integer) claims.get("id");
+
         //检验是否重复取消
         QueryWrapper<Registration> queryWrapper = new QueryWrapper<>();
         queryWrapper.eq("user_id", userId).eq("activity_id", cancelActivityId);
@@ -71,21 +64,14 @@ public class RegistrationServiceImpl extends ServiceImpl<RegistrationMapper, Reg
 
     /**
      * 订阅活动
-     * @param token
+     * @param userId
      * @param registrationDTO
      */
-    public void register(String token,RegistrationDTO registrationDTO) {
+    public void register(Integer userId,RegistrationDTO registrationDTO) {
         //检验活动是否存在
         Long activityId = registrationDTO.getActivityId();
         if(activityMapper.selectById(activityId)==null) throw new BaseException("活动id无效");
-        //解析当前登录id
-        try {
-            Map<String, Object> claims = JwtUtil.parseToken(token);
-        }catch (Exception e) {
-            throw new UserNotLoginException("token失效,请重新登录");
-        }
-        Map<String, Object> claims = JwtUtil.parseToken(token);
-        Integer userId = (Integer) claims.get("id");
+
         //检验是否重复报名
         QueryWrapper<Registration> queryWrapper = new QueryWrapper<>();
         queryWrapper.eq("user_id", userId).eq("activity_id", activityId);

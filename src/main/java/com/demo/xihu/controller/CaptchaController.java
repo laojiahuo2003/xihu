@@ -4,12 +4,14 @@ import com.demo.xihu.result.Result;
 
 import com.demo.xihu.utils.CommonUtil;
 import com.google.code.kaptcha.Producer;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.ServletOutputStream;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.redis.core.RedisTemplate;
+import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -21,19 +23,20 @@ import java.io.IOException;
 import java.util.concurrent.TimeUnit;
 
 @Slf4j
-@RequestMapping("/dev-api/captcha")
+@RequestMapping("/captcha")
 @RestController
+@Tag(name = "验证码接口")
 public class CaptchaController {
     @Autowired
     private Producer captchaProducer;
     @Autowired
-    private RedisTemplate redisTemplate;
+    private StringRedisTemplate stringRedisTemplate;
 
     @GetMapping("/get")
     public void getCaptcha(HttpServletRequest request, HttpServletResponse response){
         String text = captchaProducer.createText();
         //存入redis
-        redisTemplate.opsForValue().set(getCaptchaKey(request),text,30, TimeUnit.SECONDS);
+        stringRedisTemplate.opsForValue().set(getCaptchaKey(request),text,30, TimeUnit.SECONDS);
         //生成图片
         BufferedImage image = captchaProducer.createImage(text);
         try {
@@ -47,23 +50,26 @@ public class CaptchaController {
     }
     @GetMapping("check")
     public Result checkCaptcha(String captcha, HttpServletRequest request){
-        Object value = redisTemplate.opsForValue().get(getCaptchaKey(request));
+        Object value = stringRedisTemplate.opsForValue().get(getCaptchaKey(request));
         if(value==null){
             return Result.error("图形验证码过期");
         }
         log.info("图形验证码："+value+"传入验证码"+captcha);
         if(captcha.equals(value)){
             //登录成功后 删除redis的验证码缓存
-            redisTemplate.delete(getCaptchaKey(request));
+            stringRedisTemplate.delete(getCaptchaKey(request));
             return Result.success("图形验证码正确");
         }
         return Result.error("图形验证码错误");
     }
     //获取key
     private String getCaptchaKey(HttpServletRequest request){
-        String ip = CommonUtil.getIpAddr(request);//获取ip
+/*        String ip = CommonUtil.getIpAddr(request);//获取ip
         String userInfo = request.getHeader("User-Agent");//获取请求头中的User-Agent
-        String md5 = CommonUtil.MD5(ip + userInfo);//生成md5
+        String md5 = CommonUtil.MD5(ip + userInfo);//生成md5*/
+        String sessionId = request.getSession().getId(); // 获取session ID
+        String md5 = CommonUtil.MD5(sessionId);
+        log.info("getCaptchaKey sessionId{}",sessionId);
         return "captcha:"+md5;
     }
 }

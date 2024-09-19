@@ -7,9 +7,9 @@ import com.demo.xihu.entity.Goodregistration;
 import java.util.List;
 
 public interface GoodregistrationService extends IService<Goodregistration> {
-    void register(String token, GoodregistrationDTO goodregistrationDTO);
+    void register(Integer userId, GoodregistrationDTO goodregistrationDTO);
 
-    void cancelRegistration(String token, Long cancelActivityId);
+    void cancelRegistration(Integer userId, Long cancelActivityId);
 
     List<Integer> findSubbyUserId(Integer userId);
 }

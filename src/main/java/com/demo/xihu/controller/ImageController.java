@@ -25,7 +25,7 @@ import java.util.List;
 import java.util.UUID;
 
 @RestController
-@RequestMapping("/dev-api/images")
+@RequestMapping("/images")
 @Slf4j
 public class ImageController {
 

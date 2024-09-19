@@ -9,10 +9,10 @@ import java.util.List;
 import java.util.Map;
 
 public interface RegistrationService extends IService<Registration> {
-    void register(String token,RegistrationDTO registrationDTO);
+    void register(Integer userId,RegistrationDTO registrationDTO);
 
     List<Integer> findSubbyUserId(Integer userId);
 
-    void cancelRegistration(String token,Long cancelActivityId);
+    void cancelRegistration(Integer userId,Long cancelActivityId);
 
 }
